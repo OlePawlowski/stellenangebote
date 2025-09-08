@@ -80,6 +80,21 @@ function lang_code_normalize($s) {
     return null;
 }
 
+/** Pobiera wartość wynagrodzenia (wpTariff lub offeredSalary) jako float. */
+function job_salary_value($job) {
+    $val = arr_get($job, 'wpTariff', null);
+    if ($val === null || $val === '') {
+        $val = arr_get($job, 'offeredSalary', null);
+    }
+    return floatval($val);
+}
+
+/** Prosta walidacja URL bez rozszerzenia filter (fallback). */
+function looks_like_url($s) {
+    if (!is_string($s) || $s === '') return false;
+    return (bool) preg_match('/^https?:\/\//i', $s);
+}
+
 /** Pobiera otwarte oferty. */
 function maidplus_fetch_open_positions() {
     $url = 'https://integration.maidplus.de/working-position/open';
@@ -169,7 +184,7 @@ function pflegejobs_modernes_listing() {
         if ($from !== '') { $from_ts = strtotime($from.' 00:00:00'); if ($e_ts && $e_ts < $from_ts) return false; }
         if ($to   !== '') { $to_ts   = strtotime($to.' 23:59:59');  if ($s_ts && $s_ts > $to_ts)   return false; }
         if ($min_salary !== null && $min_salary > 0) {
-            if (floatval(arr_get($job,'wpTariff',0)) < $min_salary) return false;
+            if (job_salary_value($job) < $min_salary) return false;
         }
         if ($two_person === 1 && !arr_get($job,'secondPerson',false)) return false;
         if ($license_req === 1) {
@@ -182,8 +197,8 @@ function pflegejobs_modernes_listing() {
     // Sortowanie
     usort($filtered, function($a,$b) use ($sort){
         return match($sort) {
-            'salary_desc' => floatval(arr_get($b,'wpTariff',0)) <=> floatval(arr_get($a,'wpTariff',0)),
-            'salary_asc'  => floatval(arr_get($a,'wpTariff',0)) <=> floatval(arr_get($b,'wpTariff',0)),
+            'salary_desc' => job_salary_value($b) <=> job_salary_value($a),
+            'salary_asc'  => job_salary_value($a) <=> job_salary_value($b),
             'city_asc'    => strcasecmp((string)arr_get($a,'client.city',''), (string)arr_get($b,'client.city','')),
             'date_asc'    => strtotime((string)arr_get($a,'startDate','')) <=> strtotime((string)arr_get($b,'startDate','')),
             default       => strtotime((string)arr_get($b,'startDate','')) <=> strtotime((string)arr_get($a,'startDate','')),
@@ -288,7 +303,7 @@ function pflegejobs_modernes_listing() {
             $lang_level   = esc_html(arr_get($job, 'client.requirement.languageSkill.languageLevel', '-'));
             $start        = fmt_date_pl(arr_get($job, 'startDate', ''));
             $end          = fmt_date_pl(arr_get($job, 'endDate', ''));
-            $salary       = esc_html(fmt_salary30(arr_get($job, 'wpTariff', null)));
+            $salary       = esc_html(fmt_salary30(job_salary_value($job)));
             $secondPerson = (bool)arr_get($job, 'secondPerson', false);
             $dl           = arr_get($job,'client.requirement.drivingLicense',null) ? 'Tak' : 'Nie';
 
@@ -386,7 +401,8 @@ function pokaz_szczegoly_oferty() {
     $lon         = (float)arr_get($job, 'client.longitude', 10.451526);
     $start       = fmt_date_pl(arr_get($job, 'startDate', ''));
     $end         = fmt_date_pl(arr_get($job, 'endDate', ''));
-    $salary30    = fmt_salary30(arr_get($job, 'offeredSalary', null));
+    $salary30    = fmt_salary30(job_salary_value($job));
+    $salary30    = fmt_salary30(job_salary_value($job));
     $pflegegrad  = esc_html(arr_get($job, 'client.pflegegrad', '-'));
 
     // Osoba 1 – profil
@@ -407,7 +423,17 @@ function pokaz_szczegoly_oferty() {
     $petType     = esc_html(arr_get($job, 'client.requirement.petType.name', '—'));
     $petsCare    = yesno_pl(arr_get($job, 'client.requirement.petsCare', null));
     $helpDevices = arr_get($job, 'client.requirement.helpDevices', []);
-    $helpDevicesStr = esc_html(join_nonempty(is_array($helpDevices) ? $helpDevices : [], ', '));
+    $helpDeviceNames = [];
+    if (is_array($helpDevices)) {
+        foreach ($helpDevices as $dev) {
+            if (is_array($dev) && isset($dev['name'])) {
+                $helpDeviceNames[] = trim((string)$dev['name']);
+            } elseif (is_string($dev)) {
+                $helpDeviceNames[] = trim($dev);
+            }
+        }
+    }
+    $helpDevicesStr = esc_html(join_nonempty($helpDeviceNames, ', '));
 
     // Opis/uwagi tekstowe – osoba 1
     $desc        = esc_html(arr_get($job, 'client.house.houseDescription', ''));
@@ -450,13 +476,33 @@ function pokaz_szczegoly_oferty() {
     $smokerHH    = yesno_pl(arr_get($job, 'client.house.smokerHousehold', null));
     $petsDesc    = esc_html(arr_get($job, 'client.house.petsDescription', ''));
     $housePets   = arr_get($job, 'client.house.housePets', []);
-    $housePetsStr= esc_html(join_nonempty(is_array($housePets) ? $housePets : [], ', '));
+    $housePetNames = [];
+    if (is_array($housePets)) {
+        foreach ($housePets as $pet) {
+            if (is_array($pet) && isset($pet['name'])) {
+                $housePetNames[] = trim((string)$pet['name']);
+            } elseif (is_string($pet)) {
+                $housePetNames[] = trim($pet);
+            }
+        }
+    }
+    $housePetsStr= esc_html(join_nonempty($housePetNames, ', '));
     $shoppingFac = esc_html(arr_get($job, 'client.house.shoppingFacility', ''));
     $toClean     = esc_html(arr_get($job, 'client.house.toClean', ''));
     $carModel    = esc_html(arr_get($job, 'client.house.carModel', ''));
     $gearbox     = esc_html(arr_get($job, 'client.house.gearbox', ''));
     $mobOptions  = arr_get($job, 'client.house.mobilityOptions', []);
-    $mobOptionsStr = esc_html(join_nonempty(is_array($mobOptions) ? $mobOptions : [], ', '));
+    $mobOptionNames = [];
+    if (is_array($mobOptions)) {
+        foreach ($mobOptions as $mo) {
+            if (is_array($mo) && isset($mo['name'])) {
+                $mobOptionNames[] = trim((string)$mo['name']);
+            } elseif (is_string($mo)) {
+                $mobOptionNames[] = trim($mo);
+            }
+        }
+    }
+    $mobOptionsStr = esc_html(join_nonempty($mobOptionNames, ', '));
     $surrounding = esc_html(arr_get($job, 'client.house.surroundingArea', ''));
 
     // Druga osoba
