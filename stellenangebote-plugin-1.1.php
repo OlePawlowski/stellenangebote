@@ -207,17 +207,7 @@ function pflegejobs_modernes_listing() {
     echo '<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">';
     echo '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>';
 
-    // SVG tło
-    echo '<svg class="bcg" preserveAspectRatio="xMidYMid slice" viewBox="10 10 80 80">
-      <defs><style>@keyframes rotate{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-      .out-top{animation:rotate 20s linear infinite;transform-origin:13px 25px}
-      .in-top{animation:rotate 10s linear infinite;transform-origin:13px 25px}
-      .out-bottom{animation:rotate 25s linear infinite;transform-origin:84px 93px}
-      .in-bottom{animation:rotate 15s linear infinite;transform-origin:84px 93px}</style></defs>
-      <path fill="#f780600f" class="out-top" d="M37-5C25.1-14.7,5.7-19.1-9.2-10-28.5,1.8-32.7,31.1-19.8,49c15.5,21.5,52.6,22,67.2,2.3C59.4,35,53.7,8.5,37-5Z"/>
-      <path fill="#f780600f" class="in-top" d="M20.6,4.1C11.6,1.5-1.9,2.5-8,11.2-16.3,23.1-8.2,45.6,7.4,50S42.1,38.9,41,24.5C40.2,14.1,29.4,6.6,20.6,4.1Z"/>
-      <path fill="#f780600f" class="out-bottom" d="M105.9,48.6c-12.4-8.2-29.3-4.8-39.4,0.8-23.4,12.8-37.7,51.9-19.1,74.1s63.9,15.3,76-5.6c7.6-13.3,1.8-31.1-2.3-43.8C117.6,63.3,114.7,54.3,105.9,48.6Z"/>
-      <path fill="#f780600f" class="in-bottom" d="M102,67.1c-9.6-6.1-22-3.1-29.5,2-15.4,10.7-19.6,37.5-7.6,47.8s35.9,3.9,44.5-12.5C115.5,92.6,113.9,74.6,102,67.1Z"/></svg>';
+    // usunięto SVG tło dla bardziej czystego wyglądu
 
     echo '<div class="job-listing-container">';
     echo '<h2 class="job-listing-title">Aktualne oferty pracy w opiece</h2>';
@@ -331,32 +321,32 @@ function pflegejobs_modernes_listing() {
 
     // Style (nowy design)
     echo '<style>
-    body{margin:0;font-family:"Quicksand",sans-serif;background:#f6f7f8;color:#333}
-    svg.bcg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
-    .job-listing-container{position:relative;z-index:1;max-width:960px;margin:100px auto 60px;padding:40px 24px}
-    .job-listing-title{text-align:center;font-size:32px;color:#f78060;margin-bottom:24px}
-    .job-filters{background:rgba(255,245,242,.35);backdrop-filter:blur(6px);border:1px solid #fdded6;border-radius:16px;padding:16px;margin-bottom:16px}
-    .filters-row{display:flex;flex-wrap:wrap;gap:16px}
-    .filter-item{display:flex;flex-direction:column;min-width:180px;flex:1 1 200px}
+    :root{--brand:#3b82f6;--brand-600:#2563eb;--accent:#64748b;--bg:#f7f8fa;--card:#ffffff;--border:#e6e8ec;--pill:#f1f5f9}
+    body{margin:0;font-family:"Quicksand",sans-serif;background:var(--bg);color:#111827}
+    .job-listing-container{position:relative;z-index:1;max-width:1080px;margin:48px auto;padding:0 24px}
+    .job-listing-title{text-align:center;font-size:30px;color:var(--brand);margin-bottom:20px}
+    .job-filters{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:18px}
+    .filters-row{display:flex;flex-wrap:wrap;gap:14px}
+    .filter-item{display:flex;flex-direction:column;min-width:200px;flex:1 1 240px}
     .filter-item.checkbox{justify-content:flex-end;flex:0 0 auto;min-width:auto}
-    .filter-item label{font-size:12px;color:#f78060;margin-bottom:6px;display:flex;gap:6px;align-items:center}
-    .filter-item input[type=text],.filter-item input[type=number],.filter-item input[type=date],.filter-item select{padding:10px 12px;border:1px solid #fdded6;border-radius:12px;background:#fff;font-size:14px}
+    .filter-item label{font-size:12px;color:var(--accent);margin-bottom:6px;display:flex;gap:6px;align-items:center}
+    .filter-item input[type=text],.filter-item input[type=number],.filter-item input[type=date],.filter-item select{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px}
     .filter-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-end}
-    .btn-primary{background:#f78060;color:#fff;border:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600}
-    .btn-secondary{display:inline-block;padding:10px 14px;border-radius:12px;border:1px solid #fdded6;color:#f78060;text-decoration:none;background:#fff}
-    .result-info{margin:10px 4px 18px;color:#7b6d68;font-size:14px}
-    .job-cards{display:flex;flex-direction:column;gap:24px}
-    .job-card{display:flex;justify-content:space-between;flex-wrap:wrap;gap:24px;background:rgba(255,245,242,.35);backdrop-filter:blur(6px);padding:24px;border-radius:16px;border:1px solid #fdded6;box-shadow:0 6px 20px rgba(0,0,0,.04);transition:.3s ease;cursor:pointer}
-    .job-card:hover{background:rgba(255,245,242,.5);box-shadow:0 10px 30px rgba(0,0,0,.08);transform:translateY(-4px)}
-    .job-card-section{display:flex;flex-direction:column;gap:10px;flex:1 1 45%}
-    .job-card-section i{margin-right:6px;color:#f78060;width:18px}
-    .job-card-section div{font-size:16px;color:#333;display:flex;align-items:center}
+    .btn-primary{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600}
+    .btn-secondary{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid var(--border);color:var(--brand-600);text-decoration:none;background:#fff}
+    .result-info{margin:8px 4px 16px;color:var(--accent);font-size:14px}
+    .job-cards{display:flex;flex-direction:column;gap:16px}
+    .job-card{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;background:var(--card);padding:18px;border-radius:14px;border:1px solid var(--border);box-shadow:0 4px 14px rgba(0,0,0,.03);transition:.25s ease;cursor:pointer}
+    .job-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.06);transform:translateY(-2px)}
+    .job-card-section{display:flex;flex-direction:column;gap:8px;flex:1 1 45%}
+    .job-card-section i{margin-right:6px;color:var(--brand);width:18px}
+    .job-card-section div{font-size:15px;color:#111827;display:flex;align-items:center}
     .badge-row{display:flex;gap:8px;width:100%}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #fdded6;background:#fff;font-size:12px;color:#6a5a56}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:var(--pill);font-size:12px;color:#334155}
     .pill.no{opacity:.8}
-    .pagination{display:flex;gap:6px;justify-content:center;margin-top:20px}
-    .pagination a{padding:8px 12px;border:1px solid #fdded6;border-radius:12px;text-decoration:none;color:#f78060;background:#fff}
-    .pagination a.active,.pagination a:hover{background:rgba(255,245,242,.8)}
+    .pagination{display:flex;gap:6px;justify-content:center;margin-top:16px}
+    .pagination a{padding:8px 12px;border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--brand);background:#fff}
+    .pagination a.active,.pagination a:hover{background:#eef2ff}
     @media(max-width:768px){.job-card{flex-direction:column}.filter-actions{width:100%;margin-top:8px}}
     </style>';
 
@@ -517,32 +507,11 @@ function pokaz_szczegoly_oferty() {
 
     ?>
     <div class="pflegejob-detail-container">
-        <svg class="bcg" preserveAspectRatio="xMidYMid slice" viewBox="10 10 80 80">
-            <defs>
-                <style>
-                    @keyframes rotate { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
-                    .out-top { animation: rotate 20s linear infinite; transform-origin: 13px 25px; }
-                    .in-top { animation: rotate 10s linear infinite; transform-origin: 13px 25px; }
-                    .out-bottom { animation: rotate 25s linear infinite; transform-origin: 84px 93px; }
-                    .in-bottom { animation: rotate 15s linear infinite; transform-origin: 84px 93px; }
-                </style>
-            </defs>
-            <path fill="#f780600f" class="out-top" d="M37-5C25.1-14.7,5.7-19.1-9.2-10-28.5,1.8-32.7,31.1-19.8,49c15.5,21.5,52.6,22,67.2,2.3C59.4,35,53.7,8.5,37-5Z"/>
-            <path fill="#f780600f" class="in-top" d="M20.6,4.1C11.6,1.5-1.9,2.5-8,11.2-16.3,23.1-8.2,45.6,7.4,50S42.1,38.9,41,24.5C40.2,14.1,29.4,6.6,20.6,4.1Z"/>
-            <path fill="#f780600f" class="out-bottom" d="M105.9,48.6c-12.4-8.2-29.3-4.8-39.4,0.8-23.4,12.8-37.7,51.9-19.1,74.1s63.9,15.3,76-5.6c7.6-13.3,1.8-31.1-2.3-43.8C117.6,63.3,114.7,54.3,105.9,48.6Z"/>
-            <path fill="#f780600f" class="in-bottom" d="M102,67.1c-9.6-6.1-22-3.1-29.5,2-15.4,10.7-19.6,37.5-7.6,47.8s35.9,3.9,44.5-12.5C115.5,92.6,113.9,74.6,102,67.1Z"/>
-        </svg>
+        <!-- usunięto tło SVG -->
 
         <h1 class="pflegejob-title">Zlecenie opieki w <?= $city ?><?= $zip ? ' ('.$zip.')' : '' ?></h1>
 
-        <div class="pflegejob-info-bar">
-            <p><span class="pflegejob-label">Okres:</span> <?= esc_html($start) ?> – <?= esc_html($end) ?></p>
-            <p><span class="pflegejob-label">Wynagrodzenie:</span> <?= $salary30 !== '-' ? esc_html($salary30) : 'do negocjacji' ?></p>
-            <p><span class="pflegejob-label">Miejscowość:</span> <?= $city ?><?= $state ? ' / '.esc_html($state) : '' ?></p>
-            <p><span class="pflegejob-label">Poziom opieki:</span> <?= $pflegegrad ?></p>
-            <p><span class="pflegejob-label">Język:</span> <?= $lang_name ?><?= $lang_level ? ' – '.$lang_level : '' ?></p>
-            <p><span class="pflegejob-label">Prawo jazdy:</span> <?= esc_html($license) ?></p>
-        </div>
+        <!-- usunięto górny pasek informacji, korzystamy z siatki podsumowania -->
 
         <div class="spec-summary">
             <div class="spec-item"><i class="fa-solid fa-briefcase-medical"></i><span class="k">Praca dla</span><span class="v">opieka</span></div>
@@ -568,14 +537,6 @@ function pokaz_szczegoly_oferty() {
             <div class="pflegejob-description-box">
                 <h2><i class="fas fa-user"></i> Podopieczny/a — Osoba 1 <?= $firstName1 ? ' ('.$firstName1.')' : '' ?></h2>
                 <div class="info-row">
-                    <p><strong>Płeć:</strong> <?= $gender1 ?></p>
-                    <p><strong>Wiek:</strong> <?= $age1 ?></p>
-                    <p><strong>Wzrost:</strong> <?= $height1 ?></p>
-                    <p><strong>Waga:</strong> <?= $weight1 ?></p>
-                    <p><strong>Pflegegrad:</strong> <?= $pflegegrad ?></p>
-                    <?php if ($residents !== ''): ?>
-                        <p><strong>Liczba mieszkańców w domu:</strong> <?= $residents ?></p>
-                    <?php endif; ?>
                     <?php if ($petType !== '—'): ?>
                         <p><strong>Zwierzęta w domu:</strong> <?= $petType ?> (opieka: <?= $petsCare ?>)</p>
                     <?php endif; ?>
@@ -595,9 +556,7 @@ function pokaz_szczegoly_oferty() {
                     </div>
                 <?php endif; ?>
 
-                <?php if ($helpDevicesStr !== ''): ?>
-                    <p><strong>Urządzenia pomocnicze:</strong> <?= $helpDevicesStr ?></p>
-                <?php endif; ?>
+                
 
                 <?php if ($add_req !== ''): ?>
                     <p><strong>Dodatkowe informacje:</strong> <?= $add_req ?></p>
@@ -761,33 +720,29 @@ function pokaz_szczegoly_oferty() {
     </div>
 
     <style>
-        body { margin:0; font-family: 'Quicksand', sans-serif; background:#f6f7f8; color:#333; }
-        .pflegejob-detail-container { position:relative; background:#fff; overflow:hidden; padding:28px; max-width:1000px; margin:40px auto; border-radius:16px; box-shadow:0 6px 18px rgba(0,0,0,.05); }
-        .pflegejob-detail-container svg.bcg { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
-        .pflegejob-detail-container > *:not(svg) { position:relative; z-index:1; }
-        .pflegejob-title { font-size:32px; color:#f78060; text-align:center; margin-bottom:30px; }
-        .pflegejob-info-bar { display:flex; flex-wrap:wrap; justify-content:space-between; gap:16px; padding:16px 24px; background:rgba(255,245,242,.8); border:1px solid #fdded6; border-radius:12px; margin-bottom:32px; font-size:16px; }
-        .pflegejob-info-bar p { margin:0; flex:1 1 30%; line-height:1.6; }
-        .pflegejob-label { color:#f78060; font-weight:600; }
-        .spec-summary { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px 16px; background:#fff; border:1px solid #fdded6; border-radius:12px; padding:14px 18px; margin:-12px 0 26px; }
-        .spec-item { display:flex; align-items:center; gap:10px; font-size:14px; color:#50433f; }
-        .spec-item i { color:#f78060; width:18px; text-align:center; }
-        .spec-item .k { color:#7b6d68; min-width:160px; font-weight:600; }
-        .spec-item .v { color:#2e2a28; }
-        .pflegejob-grid-2x2 { display:grid; grid-template-columns: 1fr 1fr; gap:32px; margin-bottom:30px; }
-        .pflegejob-description-box, .pflegejob-map { background:transparent; border:1px solid #fdded6; border-radius:16px; padding:24px; box-shadow:0 2px 4px rgba(0,0,0,.03); }
-        .pflegejob-description-box h2, .pflegejob-map h2 { color:#f78060; font-size:22px; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-        .info-row { display:flex; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
-        .sublist ul { margin:8px 0 0 18px; }
-        .info-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px 24px; }
-        .pflegejob-map iframe { width:100%; height:300px; border:none; border-radius:12px; }
-        .pflegejob-btn-wrapper { text-align:center; margin-top:30px; }
-        .pflegejob-btn { background:#f78060; padding:14px 28px; color:#fff; border-radius:30px; text-decoration:none; font-weight:bold; box-shadow:0 4px 14px rgba(0,0,0,.08); transition: background .3s ease; }
-        .pflegejob-btn:hover { background:#e76948; }
+        :root{--brand:#3b82f6;--brand-600:#2563eb;--accent:#64748b;--bg:#f7f8fa;--card:#ffffff;--border:#e6e8ec}
+        body { margin:0; font-family: 'Quicksand', sans-serif; background:var(--bg); color:#111827; }
+        .pflegejob-detail-container { position:relative; background:var(--card); overflow:hidden; padding:28px; max-width:1080px; margin:32px auto; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.06); border:1px solid var(--border); }
+        .pflegejob-title { font-size:30px; color:var(--brand); text-align:center; margin-bottom:18px; }
+        .pflegejob-label { color:var(--brand); font-weight:600; }
+        .spec-summary { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px 16px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin:0 0 22px; }
+        .spec-item { display:flex; align-items:center; gap:10px; font-size:14px; color:#111827; }
+        .spec-item i { color:var(--brand); width:18px; text-align:center; }
+        .spec-item .k { color:var(--accent); min-width:160px; font-weight:600; }
+        .spec-item .v { color:#0f172a; }
+        .pflegejob-grid-2x2 { display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-bottom:26px; }
+        .pflegejob-description-box, .pflegejob-map { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.03); }
+        .pflegejob-description-box h2, .pflegejob-map h2 { color:var(--brand); font-size:18px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+        .info-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:6px; }
+        .sublist ul { margin:6px 0 0 18px; }
+        .info-grid { display:grid; grid-template-columns: 1fr 1fr; gap:6px 16px; }
+        .pflegejob-map iframe { width:100%; height:300px; border:none; border-radius:8px; }
+        .pflegejob-btn-wrapper { text-align:center; margin-top:18px; }
+        .pflegejob-btn { background:var(--brand); padding:12px 24px; color:#fff; border-radius:28px; text-decoration:none; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,.08); transition: background .2s ease; }
+        .pflegejob-btn:hover { background:var(--brand-600); }
         @media (max-width: 768px) {
             .spec-summary { grid-template-columns: 1fr; }
             .pflegejob-grid-2x2 { grid-template-columns:1fr; }
-            .pflegejob-info-bar { flex-direction:column; }
             .info-grid { grid-template-columns: 1fr; }
         }
     </style>
