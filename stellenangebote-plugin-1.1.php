@@ -796,6 +796,7 @@ function pflege_bewerbung_form() {
 
     ob_start();
     echo '<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">';
+    echo '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>';
     echo '<style>
     .apply-wrap{display:flex;justify-content:center;padding:40px 16px}
     .apply-card{max-width:640px;width:100%;background:rgba(255,245,242,.7);backdrop-filter:blur(8px);border:1px solid #fdded6;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.08);padding:28px}
