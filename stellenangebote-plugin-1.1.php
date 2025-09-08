@@ -13,13 +13,17 @@
 /** Alter aus ISO-Datum berechnen (z.B. 1950-04-12). */
 function fmt_age($iso) {
     if (empty($iso)) return '-';
-    $ts = strtotime($iso);
-    if (!$ts) return '-';
-    $age = (int) date('Y') - (int) date('Y', $ts);
-    // Korrigieren, falls Geburtstag dieses Jahr noch nicht war
-    $has_had_bday = (date('md') >= date('md', $ts));
-    return ($has_had_bday ? $age : $age - 1) . ' lat';
+    try {
+        $birth = new DateTime($iso);
+        $today = new DateTime('today');
+        $age = $birth->diff($today)->y; 
+        return $age . ' lat';
+    } catch (Exception $e) {
+        return '-';
+    }
 }
+
+
 /** Join nur nicht-leere Strings. */
 function join_nonempty(array $items, $sep = ', ') {
     $items = array_values(array_filter(array_map('trim', $items), fn($v) => $v !== '' && $v !== null));
@@ -100,7 +104,7 @@ function maidplus_fetch_open_positions() {
     $url = 'https://integration.maidplus.de/working-position/open';
     $response = wp_remote_get($url, [
         'headers' => [
-            'Authorization' => 'Basic ' . base64_encode('helpcare:nrJTyyouKzbdiwA'),
+            'Authorization' => 'Basic ' . base64_encode('helpcarepl:hallo'),
         ],
         'timeout' => 20,
     ]);
@@ -154,7 +158,7 @@ function pflegejobs_modernes_listing() {
     $two_person     = isset($_GET['two']) ? (int)$_GET['two'] : 0;
     $license_req    = isset($_GET['license']) ? (int)$_GET['license'] : 0;
     $sort           = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'date_desc';
-    $per_page       = isset($_GET['per_page']) ? max(6, min(48, intval($_GET['per_page']))) : 12;
+    $per_page       = isset($_GET['per_page']) ? max(6, min(48, values: intval($_GET['per_page']))) : 12;
     $page           = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 
     // Filtry
@@ -298,7 +302,7 @@ function pflegejobs_modernes_listing() {
         foreach ($paged_items as $job) {
             $id           = esc_attr(arr_get($job, 'jobOfferId', ''));
             $city         = esc_html(arr_get($job, 'client.city', '—'));
-            $gender_disp  = esc_html(pl_gender_label(arr_get($job,'client.gender','')));
+            $gender_disp  = esc_html(pl_gender_label(gender: arr_get($job,'client.gender','')));
             $pflegegrad   = esc_html(arr_get($job, 'client.pflegegrad', '-'));
             $lang_level   = esc_html(arr_get($job, 'client.requirement.languageSkill.languageLevel', '-'));
             $start        = fmt_date_pl(arr_get($job, 'startDate', ''));
@@ -316,7 +320,7 @@ function pflegejobs_modernes_listing() {
               echo "<div class='job-card-section'>
                       <div><i class='fas fa-calendar-alt'></i> <strong>Okres: </strong>&nbsp;{$start} – {$end}</div>
                       <div><i class='fas fa-language'></i> <strong>Język:</strong>&nbsp;{$lang_level}</div>
-                      <div><i class='fas fa-euro-sign'></i> <strong>Wynagrodzenie:</strong>&nbsp;{$salary}</div>
+                      <div><i class='fas fa-euro-sign'></i> <strong>Wynagrodzenie:</strong>&nbsp;do negocjacji</div>
                     </div>";
               echo "<div class='badge-row'>
                       ".($secondPerson ? "<span class='pill'><i class='fa-solid fa-user-group'></i> 2 osoby</span>" : "<span class='pill'><i class='fa-solid fa-user'></i> 1 osoba</span>")."
@@ -471,7 +475,7 @@ function pokaz_szczegoly_oferty() {
     $internet    = esc_html(arr_get($job, 'client.house.houseInternetConnectionType.name', '—'));
     $ownBath     = yesno_pl(arr_get($job, 'client.house.ownBathroomForCaregiver', null));
     $ownApt      = yesno_pl(arr_get($job, 'client.house.ownApartmentForCaregiver', null));
-    $sqm         = arr_get($job, 'client.house.squareMetres', null);
+    $sqm         = arr_get($job, 'client.house.squareMetres', default: null);
     $sqmStr      = $sqm !== null ? esc_html((string)$sqm).' m²' : '-';
     $smokerHH    = yesno_pl(arr_get($job, 'client.house.smokerHousehold', null));
     $petsDesc    = esc_html(arr_get($job, 'client.house.petsDescription', ''));
@@ -572,9 +576,8 @@ function pokaz_szczegoly_oferty() {
 
       .map iframe{ width:100%; height:300px; border:0; border-radius:12px; }
 
-      /* Fixe CTA */
       .cta-fixed{
-        position:fixed; right:20px; top:20px; width:320px; z-index:100;
+        position:fixed; right:20px; top: 136px; width:320px; z-index:100;
         background:#fff; border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow);
         padding:20px; display:flex; flex-direction:column; gap:14px;
       }
@@ -628,7 +631,7 @@ function pokaz_szczegoly_oferty() {
           <p class="subtitle">
             <?php
               $where = trim(join_nonempty([$zip, $city, $state], ' '));
-              $salTxt = $salary30 ? $salary30 : 'do negocjacji';
+              $salTxt = 'do negocjacji';
               echo esc_html($start).' – '.esc_html($end).' • '.esc_html($where).' • Stawka: '.esc_html($salTxt);
             ?>
           </p>
@@ -638,7 +641,7 @@ function pokaz_szczegoly_oferty() {
             <div class="facts">
               <div class="fact"><div class="icon"><i class="fa-solid fa-city"></i></div><div><strong>Miejscowość</strong><div class="value"><?php echo $city.($state?' / '.$state:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-regular fa-calendar"></i></div><div><strong>Okres</strong><div class="value"><?php echo esc_html($start).' – '.esc_html($end); ?></div></div></div>
-              <div class="fact"><div class="icon"><i class="fa-solid fa-coins"></i></div><div><strong>Wynagrodzenie</strong><div class="value"><?php echo esc_html($salTxt); ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-solid fa-coins"></i></div><div><strong>Wynagrodzenie</strong><div class="value">do negocjacji</div></div></div>
               <div class="fact"><div class="icon"><i class="fa-regular fa-clock"></i></div><div><strong>Pflegegrad</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-language"></i></div><div><strong>Język</strong><div class="value"><?php echo $lang_name.($lang_level?' – '.$lang_level:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-id-card"></i></div><div><strong>Prawo jazdy</strong><div class="value"><?php echo esc_html($license); ?></div></div></div>
@@ -699,7 +702,7 @@ function pokaz_szczegoly_oferty() {
                 <div class="label"><i class="fa-solid fa-house-chimney"></i><b>Typ domu</b></div><div><?php echo $houseType; ?></div>
                 <div class="label"><i class="fa-solid fa-wifi"></i><b>Internet</b></div><div><?php echo $internet; ?></div>
                 <div class="label"><i class="fa-solid fa-shower"></i><b>Łazienka dla opiekunki</b></div><div><?php echo $ownBath; ?></div>
-                <div class="label"><i class="fa-regular fa-square"></i><b>Oddzielne mieszkanie</b></div><div><?php echo $ownApt; ?></div>
+                <div class="label"><i class="fa-regular fa-square"></i><b>Oddzielny pokoj</b></div><div><?php echo $ownApt; ?></div>
                 <div class="label"><i class="fa-regular fa-square-full"></i><b>Powierzchnia pokoju</b></div><div><?php echo $sqmStr; ?></div>
                 <div class="label"><i class="fa-solid fa-ban-smoking"></i><b>Dom palących</b></div><div><?php echo $smokerHH; ?></div>
 
@@ -758,11 +761,9 @@ function pokaz_szczegoly_oferty() {
 
     <!-- FIXED CTA (rechts / mobil unten) -->
     <aside class="cta-fixed" aria-label="Akcje">
-      <a class="btn btn-outline" href="#" role="button"><i class="fa-solid fa-phone"></i> ZADZWOŃ</a>
-      <a class="btn btn-outline" href="#" role="button"><i class="fa-regular fa-eye"></i> WYŚWIETL</a>
+      <a class="btn btn-outline" href="tel:+48800010150" role="button"><i class="fa-solid fa-phone"></i> ZADZWOŃ</a>
       <a class="btn btn-primary" href="<?php echo esc_url( add_query_arg(['jobid'=>$jobId], '/formularz-aplikacyjny') ); ?>" role="button"><i class="fa-solid fa-square-check"></i> APLIKUJ</a>
-      <div class="badge"><i class="fa-solid fa-briefcase"></i> <?php echo esc_html__('76 ofert pracy',''); ?></div>
-      <a class="btn btn-outline" href="#" role="button"><i class="fa-regular fa-paper-plane"></i> Zapytaj o ofertę</a>
+      <div class="badge"><i class="fa-solid fa-briefcase"></i> <?php echo esc_html__('popularne miejsce pracy',''); ?></div>
     </aside>
 
     <?php
