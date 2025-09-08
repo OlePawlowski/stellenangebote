@@ -375,8 +375,13 @@ function pokaz_szczegoly_oferty() {
     $weight1     = esc_html(fmt_weight_kg(arr_get($job, 'client.weight', 0)));
     $license     = yesno_pl(arr_get($job, 'client.requirement.drivingLicense', null));
     $lang_level  = esc_html(arr_get($job, 'client.requirement.languageSkill.languageLevel', '-'));
-    $desc_img    = esc_url(arr_get($job, 'client.house.houseDescription', ''));
-    $add_req_img = esc_url(arr_get($job, 'client.requirement.additionalRequirement', ''));
+    // Opisy/załączniki: obsługa URL vs tekst
+    $desc_raw    = arr_get($job, 'client.house.houseDescription', '');
+    $desc_img    = (is_string($desc_raw) && filter_var($desc_raw, FILTER_VALIDATE_URL)) ? esc_url($desc_raw) : '';
+    $desc_text   = !$desc_img ? esc_html((string)$desc_raw) : '';
+    $add_req_raw = arr_get($job, 'client.requirement.additionalRequirement', '');
+    $add_req_img = (is_string($add_req_raw) && filter_var($add_req_raw, FILTER_VALIDATE_URL)) ? esc_url($add_req_raw) : '';
+    $add_req_text= !$add_req_img ? esc_html((string)$add_req_raw) : '';
     $secondPerson = (bool)arr_get($job, 'secondPerson', false);
 
     // Druga osoba
@@ -414,7 +419,7 @@ function pokaz_szczegoly_oferty() {
 
         <div class="pflegejob-info-bar">
             <p><span class="pflegejob-label">Okres:</span> <?= esc_html($start) ?> – <?= esc_html($end) ?></p>
-            <p><span class="pflegejob-label">Wynagrodzenie:</span> do negocjacji</p>
+            <p><span class="pflegejob-label">Wynagrodzenie:</span> <?= $salary30 !== '-' ? esc_html($salary30) : 'do negocjacji' ?></p>
             <p><span class="pflegejob-label">Miejscowość:</span> <?= $city ?></p>
             <p><span class="pflegejob-label">Poziom opieki:</span> <?= $pflegegrad ?></p>
             <p><span class="pflegejob-label">Prawo jazdy:</span> <?= esc_html($license) ?></p>
@@ -433,6 +438,8 @@ function pokaz_szczegoly_oferty() {
                 </div>
                 <?php if ($add_req_img): ?>
                     <p><strong>Załącznik/Informacja:</strong><br><img src="<?= $add_req_img ?>" alt="Załącznik" style="max-width:100%;height:auto;border-radius:8px;"></p>
+                <?php elseif ($add_req_text !== ''): ?>
+                    <p><strong>Informacje dodatkowe:</strong> <?= $add_req_text ?></p>
                 <?php endif; ?>
             </div>
 
@@ -451,6 +458,7 @@ function pokaz_szczegoly_oferty() {
             <?php else: ?>
             <div class="pflegejob-description-box">
                 <h2><i class="fas fa-house-user"></i> Zakwaterowanie</h2>
+                <?php if ($desc_text !== ''): ?><p><?= $desc_text ?></p><?php endif; ?>
                 <p><strong>Rodzaj:</strong> Osobny pokój</p>
                 <p><strong>Inni mieszkańcy:</strong> —</p>
                 <p><strong>Zwierzęta:</strong> —</p>
