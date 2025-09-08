@@ -10,17 +10,22 @@
    Helper
    ========================================================= */
 
-/** Alter aus ISO-Datum berechnen (z.B. 1950-04-12). */
+/** Wiek z ISO (obsługa formatu z T i milisekundami, np. 2025-09-08T00:00:00.000+00:00). */
 function fmt_age($iso) {
     if (empty($iso)) return '-';
-    try {
-        $birth = new DateTime($iso);
-        $today = new DateTime('today');
-        $age = $birth->diff($today)->y; 
-        return $age . ' lat';
-    } catch (Exception $e) {
-        return '-';
+    $datePart = null;
+    if (preg_match('/^(\d{4}-\d{2}-\d{2})/', (string)$iso, $m)) {
+        $datePart = $m[1];
     }
+    if ($datePart) {
+        $birth = DateTime::createFromFormat('Y-m-d', $datePart);
+    } else {
+        $birth = date_create((string)$iso);
+    }
+    if (!$birth) return '-';
+    $today = new DateTime('today');
+    $age = $birth->diff($today)->y;
+    return $age.' lat';
 }
 
 
