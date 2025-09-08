@@ -411,11 +411,47 @@ function pokaz_szczegoly_oferty() {
     $petType     = esc_html(arr_get($job, 'client.requirement.petType.name', '—'));
     $petsCare    = yesno_pl(arr_get($job, 'client.requirement.petsCare', null));
     $helpDevices = arr_get($job, 'client.requirement.helpDevices', []);
-    $helpDevicesStr = esc_html(join_nonempty(is_array($helpDevices) ? $helpDevices : [], ', '));
+    $helpDeviceNames = [];
+    if (is_array($helpDevices)) {
+        foreach ($helpDevices as $dev) {
+            if (is_array($dev) && isset($dev['name'])) {
+                $helpDeviceNames[] = trim((string)$dev['name']);
+            } elseif (is_string($dev)) {
+                $helpDeviceNames[] = trim($dev);
+            }
+        }
+    }
+    $helpDevicesStr = esc_html(join_nonempty($helpDeviceNames, ', '));
 
     // Opis/uwagi tekstowe – osoba 1
     $desc        = esc_html(arr_get($job, 'client.house.houseDescription', ''));
     $add_req     = esc_html(arr_get($job, 'client.requirement.additionalRequirement', ''));
+
+    // Dodatkowe meta na potrzeby sekcji skrótów
+    $caregiverGender = strtolower(trim((string)arr_get($job, 'client.requirement.caregiverGender', '')));
+    $caregiverFor = match($caregiverGender) {
+        'male', 'm' => 'opiekuna',
+        'female', 'f' => 'opiekunki',
+        default => 'opiekuna/opiekunki'
+    };
+    $clientGenderFor = esc_html(strtolower(pl_gender_label(arr_get($job, 'client.gender', ''))));
+    $startRaw = arr_get($job, 'startDate', '');
+    $endRaw   = arr_get($job, 'endDate', '');
+    $startFor = fmt_date_pl($startRaw);
+    $endFor   = $endRaw ? fmt_date_pl($endRaw) : 'Brak';
+    $country  = 'Niemcy';
+    $locationCompact = trim(join_nonempty([$country, $state, $city], ' / '));
+    $contractType = '-'; // brak w API
+    $tripPeriod = $endRaw ? ($startFor.' – '.fmt_date_pl($endRaw)) : 'dowolna';
+    $mobilityNote = '';
+    if ($helpDevicesStr !== '') {
+        $lower = mb_strtolower($helpDevicesStr);
+        if (strpos($lower, 'rollator') !== false) { $mobilityNote = 'osoba z rollatorem'; }
+        elseif (strpos($lower, 'laska') !== false) { $mobilityNote = 'osoba z laską'; }
+    }
+    if ($mobilityNote === '' && arr_get($job,'client.requirement.mobilityHelp',null) !== null) {
+        $mobilityNote = yesno_pl(arr_get($job,'client.requirement.mobilityHelp',null)) === 'Tak' ? 'wymaga pomocy w poruszaniu' : 'samodzielna mobilność';
+    }
 
     // Stan/diagnozy (bool/teksty)
     $conditions = [];
@@ -501,11 +537,29 @@ function pokaz_szczegoly_oferty() {
 
         <div class="pflegejob-info-bar">
             <p><span class="pflegejob-label">Okres:</span> <?= esc_html($start) ?> – <?= esc_html($end) ?></p>
-            <p><span class="pflegejob-label">Wynagrodzenie:</span> do negocjacji</p>
+            <p><span class="pflegejob-label">Wynagrodzenie:</span> <?= $salary30 !== '-' ? esc_html($salary30) : 'do negocjacji' ?></p>
             <p><span class="pflegejob-label">Miejscowość:</span> <?= $city ?><?= $state ? ' / '.esc_html($state) : '' ?></p>
             <p><span class="pflegejob-label">Poziom opieki:</span> <?= $pflegegrad ?></p>
             <p><span class="pflegejob-label">Język:</span> <?= $lang_name ?><?= $lang_level ? ' – '.$lang_level : '' ?></p>
             <p><span class="pflegejob-label">Prawo jazdy:</span> <?= esc_html($license) ?></p>
+        </div>
+
+        <div class="spec-summary">
+            <div class="spec-item"><i class="fa-solid fa-briefcase-medical"></i><span class="k">Praca dla</span><span class="v">opieka</span></div>
+            <div class="spec-item"><i class="fa-solid fa-hand-holding-euro"></i><span class="k">Stawka netto/msc</span><span class="v"><?= $salary30 !== '-' ? esc_html($salary30) : '—' ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-plane-departure"></i><span class="k">Data wyjazdu</span><span class="v"><?= esc_html($startFor) ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-plane-arrival"></i><span class="k">Data powrotu</span><span class="v"><?= esc_html($endFor) ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-location-dot"></i><span class="k">Lokalizacja</span><span class="v"><?= esc_html($locationCompact) ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-file-contract"></i><span class="k">Rodzaj umowy</span><span class="v"><?= esc_html($contractType) ?></span></div>
+            <div class="spec-item"><i class="fa-regular fa-clock"></i><span class="k">Okres wyjazdu</span><span class="v"><?= esc_html($tripPeriod) ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-language"></i><span class="k">Znajomość języka</span><span class="v"><?= $lang_name ?><?= $lang_level ? ': '.esc_html($lang_level) : '' ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-user-check"></i><span class="k">Oferta dla</span><span class="v"><?= esc_html($caregiverFor) ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-person"></i><span class="k">Oferta dotyczy</span><span class="v"><?= esc_html($clientGenderFor) ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-house-chimney-user"></i><span class="k">Współmieszkańcy</span><span class="v"><?= $residents !== '' ? esc_html($residents) : '—' ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-person-walking-with-cane"></i><span class="k">Mobilność</span><span class="v"><?= $mobilityNote !== '' ? esc_html($mobilityNote) : '—' ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-cake-candles"></i><span class="k">Wiek</span><span class="v"><?= esc_html($age1) ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-weight-scale"></i><span class="k">Waga</span><span class="v"><?= esc_html($weight1) ?></span></div>
+            <div class="spec-item"><i class="fa-solid fa-ruler-vertical"></i><span class="k">Wzrost</span><span class="v"><?= esc_html($height1) ?></span></div>
         </div>
 
         <div class="pflegejob-grid-2x2">
@@ -588,6 +642,23 @@ function pokaz_szczegoly_oferty() {
                         <p><strong>Okolica:</strong> <?= $surrounding ?></p>
                     <?php endif; ?>
                 </div>
+                <?php
+                    $dispo = [];
+                    if ($ownApt === 'Tak') $dispo[] = 'Własny pokój/mieszkanie';
+                    if ($ownBath === 'Tak') $dispo[] = 'Własna łazienka';
+                    if ($internet !== '-' && $internet !== '—') $dispo[] = 'Internet';
+                    if ($carModel !== '' || $gearbox !== '') $dispo[] = 'Samochód';
+                    if (!empty($dispo)):
+                ?>
+                    <div class="sublist">
+                        <strong>Do dyspozycji na zleceniu:</strong>
+                        <ul>
+                            <?php foreach ($dispo as $d): ?>
+                                <li><?= esc_html($d) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- OCZEKIWANIA SZEROKIE -->
@@ -600,7 +671,74 @@ function pokaz_szczegoly_oferty() {
                     <?php if ($petsCare !== '-'): ?>
                         <p><strong>Opieka nad zwierzętami:</strong> <?= $petsCare ?></p>
                     <?php endif; ?>
+                    <p><strong>Doświadczenie:</strong> —</p>
+                    <p><strong>Referencje:</strong> —</p>
                 </div>
+            </div>
+
+            <?php
+                $careTasks = [];
+                if (arr_get($job,'client.requirement.helpDress',null)) $careTasks[] = 'pomoc w ubraniu';
+                if (arr_get($job,'client.requirement.bodyHygiene',null)) $careTasks[] = 'pomoc w higienie';
+                if (arr_get($job,'client.requirement.intimateCare',null)) $careTasks[] = 'pielęgnacja intymna';
+                if (arr_get($job,'client.requirement.helpFoodIntake',null)) $careTasks[] = 'pomoc w jedzeniu';
+                if (arr_get($job,'client.requirement.helpToilet',null)) $careTasks[] = 'pomoc w toalecie';
+                if (arr_get($job,'client.requirement.commonActivity',null)) $careTasks[] = 'organizacja dnia / wspólne aktywności';
+
+                $homeTasks = [];
+                if (arr_get($job,'client.requirement.prepareFood',null)) $homeTasks[] = 'gotowanie';
+                if (arr_get($job,'client.requirement.cleaningRooms',null)) $homeTasks[] = 'sprzątanie';
+                if (arr_get($job,'client.requirement.ironingLaundry',null)) $homeTasks[] = 'prasowanie';
+                if (arr_get($job,'client.requirement.foodShopping',null)) $homeTasks[] = 'zakupy';
+
+                $otherTasks = [];
+                if ($dl === 'Tak') $otherTasks[] = 'jazda samochodem';
+                if (arr_get($job,'client.requirement.petsCare',null)) $otherTasks[] = 'opieka nad zwierzętami';
+                if (arr_get($job,'client.requirement.arrangeMedicalAppointments',null)) $otherTasks[] = 'organizacja wizyt lekarskich';
+                if (arr_get($job,'client.requirement.planLeisureTimeOutside',null)) $otherTasks[] = 'spacery / wyjścia';
+            ?>
+            <div class="pflegejob-description-box">
+                <h2><i class="fa-solid fa-list-check"></i> Zakres obowiązków</h2>
+                <?php if (!empty($careTasks)): ?>
+                    <div class="sublist">
+                        <strong>Czynności opiekuńcze:</strong>
+                        <ul>
+                            <?php foreach ($careTasks as $t): ?>
+                                <li><?= esc_html($t) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($homeTasks)): ?>
+                    <div class="sublist">
+                        <strong>Obowiązki domowe:</strong>
+                        <ul>
+                            <?php foreach ($homeTasks as $t): ?>
+                                <li><?= esc_html($t) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($otherTasks)): ?>
+                    <div class="sublist">
+                        <strong>Pozostałe zadania:</strong>
+                        <ul>
+                            <?php foreach ($otherTasks as $t): ?>
+                                <li><?= esc_html($t) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+                <?php if ($helpDevicesStr !== ''): ?>
+                    <div class="sublist">
+                        <strong>Pomoce medyczne na zleceniu:</strong>
+                        <ul>
+                            <?php foreach (explode(', ', $helpDevicesStr) as $hd): ?>
+                                <li><?= esc_html($hd) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -631,6 +769,11 @@ function pokaz_szczegoly_oferty() {
         .pflegejob-info-bar { display:flex; flex-wrap:wrap; justify-content:space-between; gap:16px; padding:16px 24px; background:rgba(255,245,242,.8); border:1px solid #fdded6; border-radius:12px; margin-bottom:32px; font-size:16px; }
         .pflegejob-info-bar p { margin:0; flex:1 1 30%; line-height:1.6; }
         .pflegejob-label { color:#f78060; font-weight:600; }
+        .spec-summary { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px 16px; background:#fff; border:1px solid #fdded6; border-radius:12px; padding:14px 18px; margin:-12px 0 26px; }
+        .spec-item { display:flex; align-items:center; gap:10px; font-size:14px; color:#50433f; }
+        .spec-item i { color:#f78060; width:18px; text-align:center; }
+        .spec-item .k { color:#7b6d68; min-width:160px; font-weight:600; }
+        .spec-item .v { color:#2e2a28; }
         .pflegejob-grid-2x2 { display:grid; grid-template-columns: 1fr 1fr; gap:32px; margin-bottom:30px; }
         .pflegejob-description-box, .pflegejob-map { background:transparent; border:1px solid #fdded6; border-radius:16px; padding:24px; box-shadow:0 2px 4px rgba(0,0,0,.03); }
         .pflegejob-description-box h2, .pflegejob-map h2 { color:#f78060; font-size:22px; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
@@ -642,6 +785,7 @@ function pokaz_szczegoly_oferty() {
         .pflegejob-btn { background:#f78060; padding:14px 28px; color:#fff; border-radius:30px; text-decoration:none; font-weight:bold; box-shadow:0 4px 14px rgba(0,0,0,.08); transition: background .3s ease; }
         .pflegejob-btn:hover { background:#e76948; }
         @media (max-width: 768px) {
+            .spec-summary { grid-template-columns: 1fr; }
             .pflegejob-grid-2x2 { grid-template-columns:1fr; }
             .pflegejob-info-bar { flex-direction:column; }
             .info-grid { grid-template-columns: 1fr; }
