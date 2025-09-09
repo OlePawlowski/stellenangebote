@@ -693,10 +693,11 @@ function pokaz_szczegoly_oferty() {
 
       /* Key/Value – mobil dürfen die Unterpunkte nebeneinander sein */
       .kv{ display:grid; grid-template-columns:1fr 1fr; gap:10px 22px; align-items:start; }
+      .kv.stack-mobile{ grid-template-columns:1fr 2fr; }
       .kv .label{ display:flex; align-items:flex-start; gap:10px; }
       .kv .label i{ color:var(--primary); margin-top:2px; width:18px; text-align:center; }
       .kv b{ font-weight:900; }
-      @media (max-width:420px){ .kv{ } } /* nur sehr klein einspaltig */
+      @media (max-width:420px){ .kv{ grid-template-columns:1fr; } .kv.stack-mobile{ grid-template-columns:1fr; } } /* nur sehr klein einspaltig */
 
       .bullets{ list-style:none; padding:0; margin:8px 0 0; }
       .bullets li{ display:flex; gap:10px; align-items:flex-start; margin:.4rem 0; }
@@ -829,13 +830,13 @@ function pokaz_szczegoly_oferty() {
               <?php endif; ?>
 
               <?php if ($helpDevicesStr !== ''): ?>
-                <div class="kv" style="margin-top:10px">
+                <div class="kv stack-mobile" style="margin-top:10px">
                   <div class="label"><i class="fa-solid fa-crutch"></i><b>Urządzenia pomocnicze</b></div><div><?php echo $helpDevicesStr; ?></div>
                 </div>
               <?php endif; ?>
 
               <?php if ($add_req !== ''): ?>
-                <div class="kv" style="margin-top:6px">
+                <div class="kv stack-mobile" style="margin-top:6px">
                   <div class="label"><i class="fa-regular fa-note-sticky"></i><b>Dodatkowe informacje</b></div><div><?php echo $add_req; ?></div>
                 </div>
               <?php endif; ?>
