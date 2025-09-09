@@ -186,7 +186,7 @@ function pflegejobs_modernes_listing() {
     $two_person     = isset($_GET['two']) ? (int)$_GET['two'] : 0;
     $license_req    = isset($_GET['license']) ? (int)$_GET['license'] : 0;
     $sort           = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'date_desc';
-    $per_page       = isset($_GET['per_page']) ? max(6, min(48, values: intval($_GET['per_page']))) : 12;
+    $per_page       = isset($_GET['per_page']) ? max(6, min(48, intval($_GET['per_page']))) : 12;
     $page           = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 
     // Filtry
@@ -551,7 +551,7 @@ function pokaz_szczegoly_oferty() {
     $internet    = esc_html($trInternet[$internetRaw] ?? $internetRaw);
     $ownBath     = yesno_pl(arr_get($job, 'client.house.ownBathroomForCaregiver', null));
     $ownApt      = yesno_pl(arr_get($job, 'client.house.ownApartmentForCaregiver', null));
-    $sqm         = arr_get($job, 'client.house.squareMetres', default: null);
+    $sqm         = arr_get($job, 'client.house.squareMetres', null);
     $sqmStr      = $sqm !== null ? esc_html((string)$sqm).' m²' : '-';
     $smokerHH    = yesno_pl(arr_get($job, 'client.house.smokerHousehold', null));
     $petsDesc    = esc_html(arr_get($job, 'client.house.petsDescription', ''));
