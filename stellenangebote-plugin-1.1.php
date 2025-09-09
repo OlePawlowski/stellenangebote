@@ -72,7 +72,7 @@ function fmt_date_pl($iso) {
 /** Wynagrodzenie jako €/30 dni. */
 function fmt_salary30($val) {
     if ($val === null || $val === '') return '-';
-    return number_format((float)$val, 2, ',', '') . ' € / 30 dni';
+    return number_format((float)$val, 2, ',', '') . ' € / msc';
 }
 
 /** Wzrost/Waga. */
@@ -270,7 +270,7 @@ function pflegejobs_modernes_listing() {
       echo '<div class="filters-row">';
         echo '<div class="filter-item"><label for="from"><i class="fa-solid fa-calendar-day"></i> Od</label><input type="date" id="from" name="from" value="'.esc_attr($from).'"></div>';
         echo '<div class="filter-item"><label for="to"><i class="fa-solid fa-calendar-check"></i> Do</label><input type="date" id="to" name="to" value="'.esc_attr($to).'"></div>';
-        echo '<div class="filter-item"><label for="min_salary"><i class="fa-solid fa-euro-sign"></i> Min. wynagrodzenie (€/30)</label><input type="number" step="0.01" min="0" id="min_salary" name="min_salary" value="'.esc_attr($min_salary ?? '').'" placeholder="np. 30"></div>';
+        echo '<div class="filter-item"><label for="min_salary"><i class="fa-solid fa-euro-sign"></i> Min. wynagrodzenie (€/msc)</label><input type="number" step="0.01" min="0" id="min_salary" name="min_salary" value="'.esc_attr($min_salary ?? '').'" placeholder="np. 2200"></div>';
         echo '<div class="filter-item checkbox"><label class="chk"><input type="checkbox" name="two" value="1" '.checked($two_person,1,false).'> 2 osoby</label></div>';
         echo '<div class="filter-item checkbox"><label class="chk"><input type="checkbox" name="license" value="1" '.checked($license_req,1,false).'> Prawo jazdy</label></div>';
       echo '</div>';
@@ -426,10 +426,29 @@ function pokaz_szczegoly_oferty() {
     // Wymagania/stan zdrowia – osoba 1
     $license     = yesno_pl(arr_get($job, 'client.requirement.drivingLicense', null));
     $nonSmokerReq= yesno_pl(arr_get($job, 'client.requirement.nonSmoker', null));
-    $lang_level  = esc_html(arr_get($job, 'client.requirement.languageSkill.languageLevel', '-'));
-    $lang_name   = esc_html(arr_get($job, 'client.requirement.languageSkill.language', 'Niemiecki'));
-    $nightSorties= esc_html(arr_get($job, 'client.requirement.nightSorties', '0'));
-    $petType     = esc_html(arr_get($job, 'client.requirement.petType.name', '—'));
+    $lang_level  = (string)arr_get($job, 'client.requirement.languageSkill.languageLevel', '-');
+    $lang_name   = (string)arr_get($job, 'client.requirement.languageSkill.language', 'German');
+    // Translacje stałych wartości -> PL
+    $trLang = [
+      'German' => 'Niemiecki', 'English' => 'Angielski'
+    ];
+    $trLangLevel = [
+      'A0 (keine)' => 'A0 (brak)', 'A1 (Grund)' => 'A1 (podstawy)', 'A2 (mittel)' => 'A2 (średni)',
+      'B1 (gut)' => 'B1 (dobry)', 'B2 (sehr gut)' => 'B2 (bardzo dobry)', 'C1 (perfekt)' => 'C1 (perfekcyjny)', 'C2' => 'C2'
+    ];
+    $lang_name = esc_html($trLang[$lang_name] ?? $lang_name);
+    $lang_level = esc_html($trLangLevel[$lang_level] ?? $lang_level);
+    $nightRaw    = (string)arr_get($job, 'client.requirement.nightSorties', '0');
+    $trNight = [
+      '1 x Night' => '1x w nocy',
+      'Several times a night' => 'kilka razy w nocy',
+      'gelegentlich' => 'okazjonalnie',
+      'gt2' => 'kilka razy w nocy'
+    ];
+    $nightSorties= esc_html($trNight[$nightRaw] ?? $nightRaw);
+    $petRaw      = (string)arr_get($job, 'client.requirement.petType.name', '—');
+    $trPets = ['Big Dog'=>'Duży pies','Small Dog'=>'Mały pies','Cat'=>'Kot','Bird'=>'Ptak','Mouse'=>'Mysz','Snake'=>'Wąż'];
+    $petType     = esc_html($trPets[$petRaw] ?? $petRaw);
     $petsCare    = yesno_pl(arr_get($job, 'client.requirement.petsCare', null));
     $helpDevices = arr_get($job, 'client.requirement.helpDevices', []);
     $helpDeviceNames = [];
@@ -476,8 +495,12 @@ function pokaz_szczegoly_oferty() {
         $conditions[] = 'Anamneza: '.esc_html(arr_get($job,'client.anamnesis',''));
 
     // Dom / zakwaterowanie – rozszerzone
-    $houseType   = esc_html(arr_get($job, 'client.house.houseType.name', '—'));
-    $internet    = esc_html(arr_get($job, 'client.house.houseInternetConnectionType.name', '—'));
+    $houseTypeRaw= (string)arr_get($job, 'client.house.houseType.name', '—');
+    $trHouse = ['Apartment with elevator'=>'Mieszkanie z windą','Apartment'=>'Mieszkanie','Apartment House'=>'Dom wielorodzinny','Detached House'=>'Dom jednorodzinny'];
+    $houseType   = esc_html($trHouse[$houseTypeRaw] ?? $houseTypeRaw);
+    $internetRaw = (string)arr_get($job, 'client.house.houseInternetConnectionType.name', '—');
+    $trInternet = ['Kabel'=>'Kabel','Not Available'=>'Brak','Ordered'=>'Zamówiony','Surfstick'=>'Modem USB','Wifi'=>'Wi‑Fi'];
+    $internet    = esc_html($trInternet[$internetRaw] ?? $internetRaw);
     $ownBath     = yesno_pl(arr_get($job, 'client.house.ownBathroomForCaregiver', null));
     $ownApt      = yesno_pl(arr_get($job, 'client.house.ownApartmentForCaregiver', null));
     $sqm         = arr_get($job, 'client.house.squareMetres', default: null);
@@ -511,7 +534,8 @@ function pokaz_szczegoly_oferty() {
             }
         }
     }
-    $mobOptionsStr = esc_html(join_nonempty($mobOptionNames, ', '));
+    $trMob = ['Access to public transport'=>'Dostęp do komunikacji miejskiej','Bike'=>'Rower','Car'=>'Samochód','E-Bike'=>'E‑rower'];
+    $mobOptionsStr = esc_html(join_nonempty(array_map(function($v) use ($trMob){return $trMob[$v] ?? $v;}, $mobOptionNames), ', '));
     $surrounding = esc_html(arr_get($job, 'client.house.surroundingArea', ''));
 
     // Druga osoba
