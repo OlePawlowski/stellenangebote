@@ -325,7 +325,7 @@ function pflegejobs_modernes_listing() {
               echo "<div class='job-card-section'>
                       <div><i class='fas fa-calendar-alt'></i> <strong>Okres: </strong>&nbsp;{$start} – {$end}</div>
                       <div><i class='fas fa-language'></i> <strong>Język:</strong>&nbsp;{$lang_level}</div>
-                      <div><i class='fas fa-euro-sign'></i> <strong>Wynagrodzenie:</strong>&nbsp;do negocjacji</div>
+                      <div><i class='fas fa-euro-sign'></i> <strong>Wynagrodzenie:</strong>&nbsp;{$salary}</div>
                     </div>";
               echo "<div class='badge-row'>
                       ".($secondPerson ? "<span class='pill'><i class='fa-solid fa-user-group'></i> 2 osoby</span>" : "<span class='pill'><i class='fa-solid fa-user'></i> 1 osoba</span>")."
@@ -679,7 +679,7 @@ function pokaz_szczegoly_oferty() {
               <div class="fact"><div class="icon"><i class="fa-solid fa-city"></i></div><div><strong>Miejscowość</strong><div class="value"><?php echo $city.($state?' / '.$state:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-regular fa-calendar"></i></div><div><strong>Okres</strong><div class="value"><?php echo esc_html($start).' – '.esc_html($end); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-coins"></i></div><div><strong>Wynagrodzenie</strong><div class="value"><?php echo $salary30; ?></div></div></div>
-              <div class="fact"><div class="icon"><i class="fa-regular fa-clock"></i></div><div><strong>Pflegegrad</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-regular fa-clock"></i></div><div><strong>Stopień opieki</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-language"></i></div><div><strong>Język</strong><div class="value"><?php echo $lang_name.($lang_level?' – '.$lang_level:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-id-card"></i></div><div><strong>Prawo jazdy</strong><div class="value"><?php echo esc_html($license); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-user-check"></i></div><div><strong>Oferta dla</strong><div class="value"><?php echo esc_html($caregiverGender); ?></div></div></div>
@@ -698,7 +698,7 @@ function pokaz_szczegoly_oferty() {
                 <div class="label"><i class="fa-solid fa-hourglass-half"></i><b>Wiek</b></div><div><?php echo $age1; ?></div>
                 <div class="label"><i class="fa-solid fa-ruler-vertical"></i><b>Wzrost</b></div><div><?php echo $height1; ?></div>
                 <div class="label"><i class="fa-solid fa-weight-scale"></i><b>Waga</b></div><div><?php echo $weight1; ?></div>
-                <div class="label"><i class="fa-regular fa-circle-check"></i><b>Pflegegrad</b></div><div><?php echo $pflegegrad; ?></div>
+                <div class="label"><i class="fa-regular fa-circle-check"></i><b>Stopień opieki</b></div><div><?php echo $pflegegrad; ?></div>
                 <?php if ($residents !== ''): ?>
                   <div class="label"><i class="fa-solid fa-people-roof"></i><b>Mieszkańcy w domu</b></div><div><?php echo $residents; ?></div>
                 <?php endif; ?>
@@ -711,11 +711,12 @@ function pokaz_szczegoly_oferty() {
               </div>
 
               <?php if (!empty($conditions)): ?>
-                <ul class="bullets" aria-label="Stan zdrowia i opieka">
+                <div class="kv" style="margin-top:6px" aria-label="Stan zdrowia i opieka">
                   <?php foreach ($conditions as $c): ?>
-                    <li><i class="fa-solid fa-circle-check"></i> <?php echo esc_html($c); ?></li>
+                    <div class="label"><i class="fa-solid fa-circle-check"></i><b><?php echo esc_html(explode(':',$c,2)[0]); ?></b></div>
+                    <div><?php echo isset(explode(':',$c,2)[1]) ? esc_html(trim(explode(':',$c,2)[1])) : ''; ?></div>
                   <?php endforeach; ?>
-                </ul>
+                </div>
               <?php endif; ?>
 
               <?php if ($helpDevicesStr !== ''): ?>
@@ -779,7 +780,7 @@ function pokaz_szczegoly_oferty() {
                   <div class="label"><i class="fa-solid fa-hourglass-half"></i><b>Wiek</b></div><div><?php echo $age2; ?></div>
                   <div class="label"><i class="fa-solid fa-ruler-vertical"></i><b>Wzrost</b></div><div><?php echo $height2; ?></div>
                   <div class="label"><i class="fa-solid fa-weight-scale"></i><b>Waga</b></div><div><?php echo $weight2; ?></div>
-                  <div class="label"><i class="fa-regular fa-circle-check"></i><b>Pflegegrad</b></div><div><?php echo $pflege2; ?></div>
+                  <div class="label"><i class="fa-regular fa-circle-check"></i><b>Stopień opieki</b></div><div><?php echo $pflege2; ?></div>
                 </div>
               </div>
             <?php endif; ?>
