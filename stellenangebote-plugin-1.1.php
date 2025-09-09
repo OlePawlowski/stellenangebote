@@ -362,11 +362,11 @@ function pflegejobs_modernes_listing() {
     echo '<style>
     body{margin:0;font-family:"Quicksand",sans-serif;background:#f6f7f8;color:#333}
     svg.bcg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
-    .job-listing-container{position:relative;z-index:1;max-width:960px;margin:100px auto 60px;padding:40px 24px}
+    .job-listing-container{position:relative;z-index:1;max-width:960px;margin:60px auto 40px;padding:20px 16px}
     .job-listing-title{text-align:center;font-size:32px;color:#f78060;margin-bottom:24px}
     .job-filters{background:rgba(255,245,242,.35);backdrop-filter:blur(6px);border:1px solid #fdded6;border-radius:16px;padding:16px;margin-bottom:16px}
-    .filters-row{display:flex;flex-wrap:wrap;gap:16px}
-    .filter-item{display:flex;flex-direction:column;min-width:180px;flex:1 1 200px}
+    .filters-row{display:flex;flex-wrap:wrap;gap:12px}
+    .filter-item{display:flex;flex-direction:column;min-width:140px;flex:1 1 180px}
     .filter-item.checkbox{justify-content:flex-end;flex:0 0 auto;min-width:auto}
     .filter-item label{font-size:12px;color:#f78060;margin-bottom:6px;display:flex;gap:6px;align-items:center}
     .filter-item input[type=text],.filter-item input[type=number],.filter-item input[type=date],.filter-item select{padding:10px 12px;border:1px solid #fdded6;border-radius:12px;background:#fff;font-size:14px}
@@ -386,7 +386,13 @@ function pflegejobs_modernes_listing() {
     .pagination{display:flex;gap:6px;justify-content:center;margin-top:20px}
     .pagination a{padding:8px 12px;border:1px solid #fdded6;border-radius:12px;text-decoration:none;color:#f78060;background:#fff}
     .pagination a.active,.pagination a:hover{background:rgba(255,245,242,.8)}
-    @media(max-width:768px){.job-card{flex-direction:column}.filter-actions{width:100%;margin-top:8px}}
+    @media(max-width:768px){
+      .job-card{flex-direction:column}
+      .filters-row{gap:10px}
+      .filter-item{flex:1 1 100%;min-width:100%}
+      .filter-actions{width:100%;margin-top:8px;justify-content:stretch}
+      .filter-actions .btn-primary, .filter-actions .btn-secondary{flex:1}
+    }
     </style>';
 
     return ob_get_clean();
@@ -584,6 +590,8 @@ function pokaz_szczegoly_oferty() {
 
       /* Platz rechts für fixe CTA (Desktop) */
       @media (min-width:1100px){ .pflegejob-page-pad{ padding-right:360px; } }
+      @media (max-width:1024px){ .pflegejob-page-pad{ padding-right:0; } .cta-fixed{ position:static; width:auto; border-radius:16px; margin:12px 16px 0; } }
+      @media (max-width:640px){ .pflegejob-wrap{ padding:12px; margin:20px auto; } .section{ padding:14px; border-radius:14px; } .facts{ gap:10px; } .icon{ width:34px; height:34px; } .title{ font-size:clamp(20px,3vw + 12px,28px); } }
 
       /* Unveränderte Hero-Section (aus deinem Layout) */
       .header{ padding:28px 28px 6px; }
@@ -620,6 +628,7 @@ function pokaz_szczegoly_oferty() {
       .bullets li i{ color:var(--primary); margin-top:2px; }
 
       .map iframe{ width:100%; height:300px; border:0; border-radius:12px; }
+      @media (max-width:420px){ .map iframe{ height:240px; } }
 
       .cta-fixed{
         position:fixed; right:20px; top: 136px; width:320px; z-index:100;
@@ -719,10 +728,27 @@ function pokaz_szczegoly_oferty() {
               </div>
 
               <?php if (!empty($conditions)): ?>
+                <?php
+                  $condIconMap = [
+                    'Demencja' => 'fa-brain',
+                    'Typ demencji' => 'fa-brain',
+                    'Osoba leżąca' => 'fa-bed',
+                    'Transfer' => 'fa-people-arrows',
+                    'Pomoc w mobilności' => 'fa-person-walking',
+                    'Pieluchy' => 'fa-toilet-paper',
+                    'Pomoc w toalecie' => 'fa-restroom',
+                    'Pomoc przy jedzeniu' => 'fa-utensils',
+                    'Higiena ciała' => 'fa-hand-sparkles',
+                    'Pielęgnacja intymna' => 'fa-hand-holding-heart',
+                    'Pomoc w ubieraniu' => 'fa-shirt',
+                    'Anamneza' => 'fa-notes-medical',
+                  ];
+                ?>
                 <div class="kv" style="margin-top:6px" aria-label="Stan zdrowia i opieka">
                   <?php foreach ($conditions as $c): ?>
-                    <div class="label"><i class="fa-solid fa-circle-check"></i><b><?php echo esc_html(explode(':',$c,2)[0]); ?></b></div>
-                    <div><?php echo isset(explode(':',$c,2)[1]) ? esc_html(trim(explode(':',$c,2)[1])) : ''; ?></div>
+                    <?php $parts = explode(':', $c, 2); $lbl = trim($parts[0]); $val = isset($parts[1]) ? trim($parts[1]) : ''; $ico = $condIconMap[$lbl] ?? 'fa-circle-check'; ?>
+                    <div class="label"><i class="fa-solid <?php echo esc_attr($ico); ?>"></i><b><?php echo esc_html($lbl); ?></b></div>
+                    <div><?php echo esc_html($val); ?></div>
                   <?php endforeach; ?>
                 </div>
               <?php endif; ?>
