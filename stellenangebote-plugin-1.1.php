@@ -2,13 +2,38 @@
 /**
  * Plugin Name: Oferty Pracy Opiekunek (Maidplus)
  * Description: Oferty pracy + szczegóły + formularz aplikacyjny (Maidplus API).
- * Version: 1.4
+ * Version: 1.2
  * Author: Ole Pawlowski (extended)
  */
 
 /* =========================================================
    Helper
    ========================================================= */
+
+/** Wiek z ISO (obsługa formatu z T i milisekundami, np. 2025-09-08T00:00:00.000+00:00). */
+function fmt_age($iso) {
+    if (empty($iso)) return '-';
+    $datePart = null;
+    if (preg_match('/^(\d{4}-\d{2}-\d{2})/', (string)$iso, $m)) {
+        $datePart = $m[1];
+    }
+    if ($datePart) {
+        $birth = DateTime::createFromFormat('Y-m-d', $datePart);
+    } else {
+        $birth = date_create((string)$iso);
+    }
+    if (!$birth) return '-';
+    $today = new DateTime('today');
+    $age = $birth->diff($today)->y;
+    return $age.' lat';
+}
+
+
+/** Join nur nicht-leere Strings. */
+function join_nonempty(array $items, $sep = ', ') {
+    $items = array_values(array_filter(array_map('trim', $items), fn($v) => $v !== '' && $v !== null));
+    return implode($sep, $items);
+}
 
 /** Bezpieczne pobieranie wartości z tablicy z kropkową ścieżką. */
 function arr_get($arr, $path, $default = null) {
@@ -44,17 +69,6 @@ function fmt_date_pl($iso) {
     return date_i18n('d.m.Y', $ts);
 }
 
-/** Wiek na podstawie birthDate (YYYY-MM-DD lub ISO). */
-function fmt_age($iso) {
-    if (empty($iso)) return '-';
-    $ts = strtotime($iso);
-    if (!$ts) return '-';
-    $birth = new DateTime(date('Y-m-d', $ts));
-    $today = new DateTime('today');
-    $age = $birth->diff($today)->y;
-    return $age >= 0 ? $age.' lat' : '-';
-}
-
 /** Wynagrodzenie jako €/30 dni. */
 function fmt_salary30($val) {
     if ($val === null || $val === '') return '-';
@@ -75,13 +89,19 @@ function lang_code_normalize($s) {
     return null;
 }
 
-/** Łączy wartości niepuste, z separatorem, z opcjonalnym prefiksem. */
-function join_nonempty(array $items, string $sep = ', ') {
-    $out = array_values(array_filter(array_map(function($v){
-        $v = is_string($v) ? trim($v) : $v;
-        return ($v === null || $v === '' || $v === false) ? null : $v;
-    }, $items), fn($v) => $v !== null));
-    return implode($sep, $out);
+/** Pobiera wartość wynagrodzenia (wpTariff lub offeredSalary) jako float. */
+function job_salary_value($job) {
+    $val = arr_get($job, 'wpTariff', null);
+    if ($val === null || $val === '') {
+        $val = arr_get($job, 'offeredSalary', null);
+    }
+    return floatval($val);
+}
+
+/** Prosta walidacja URL bez rozszerzenia filter (fallback). */
+function looks_like_url($s) {
+    if (!is_string($s) || $s === '') return false;
+    return (bool) preg_match('/^https?:\/\//i', $s);
 }
 
 /** Pobiera otwarte oferty. */
@@ -89,7 +109,7 @@ function maidplus_fetch_open_positions() {
     $url = 'https://integration.maidplus.de/working-position/open';
     $response = wp_remote_get($url, [
         'headers' => [
-            'Authorization' => 'Basic ' . base64_encode('helpcare:nrJTyyouKzbdiwA'),
+            'Authorization' => 'Basic ' . base64_encode('helpcarepl:hallo'),
         ],
         'timeout' => 20,
     ]);
@@ -143,7 +163,7 @@ function pflegejobs_modernes_listing() {
     $two_person     = isset($_GET['two']) ? (int)$_GET['two'] : 0;
     $license_req    = isset($_GET['license']) ? (int)$_GET['license'] : 0;
     $sort           = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'date_desc';
-    $per_page       = isset($_GET['per_page']) ? max(6, min(48, intval($_GET['per_page']))) : 12;
+    $per_page       = isset($_GET['per_page']) ? max(6, min(48, values: intval($_GET['per_page']))) : 12;
     $page           = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 
     // Filtry
@@ -173,7 +193,7 @@ function pflegejobs_modernes_listing() {
         if ($from !== '') { $from_ts = strtotime($from.' 00:00:00'); if ($e_ts && $e_ts < $from_ts) return false; }
         if ($to   !== '') { $to_ts   = strtotime($to.' 23:59:59');  if ($s_ts && $s_ts > $to_ts)   return false; }
         if ($min_salary !== null && $min_salary > 0) {
-            if (floatval(arr_get($job,'offeredSalary',0)) < $min_salary) return false;
+            if (job_salary_value($job) < $min_salary) return false;
         }
         if ($two_person === 1 && !arr_get($job,'secondPerson',false)) return false;
         if ($license_req === 1) {
@@ -186,8 +206,8 @@ function pflegejobs_modernes_listing() {
     // Sortowanie
     usort($filtered, function($a,$b) use ($sort){
         return match($sort) {
-            'salary_desc' => floatval(arr_get($b,'offeredSalary',0)) <=> floatval(arr_get($a,'offeredSalary',0)),
-            'salary_asc'  => floatval(arr_get($a,'offeredSalary',0)) <=> floatval(arr_get($b,'offeredSalary',0)),
+            'salary_desc' => job_salary_value($b) <=> job_salary_value($a),
+            'salary_asc'  => job_salary_value($a) <=> job_salary_value($b),
             'city_asc'    => strcasecmp((string)arr_get($a,'client.city',''), (string)arr_get($b,'client.city','')),
             'date_asc'    => strtotime((string)arr_get($a,'startDate','')) <=> strtotime((string)arr_get($b,'startDate','')),
             default       => strtotime((string)arr_get($b,'startDate','')) <=> strtotime((string)arr_get($a,'startDate','')),
@@ -287,12 +307,12 @@ function pflegejobs_modernes_listing() {
         foreach ($paged_items as $job) {
             $id           = esc_attr(arr_get($job, 'jobOfferId', ''));
             $city         = esc_html(arr_get($job, 'client.city', '—'));
-            $gender_disp  = esc_html(pl_gender_label(arr_get($job,'client.gender','')));
+            $gender_disp  = esc_html(pl_gender_label(gender: arr_get($job,'client.gender','')));
             $pflegegrad   = esc_html(arr_get($job, 'client.pflegegrad', '-'));
             $lang_level   = esc_html(arr_get($job, 'client.requirement.languageSkill.languageLevel', '-'));
             $start        = fmt_date_pl(arr_get($job, 'startDate', ''));
             $end          = fmt_date_pl(arr_get($job, 'endDate', ''));
-            $salary       = esc_html(fmt_salary30(arr_get($job, 'offeredSalary', null)));
+            $salary       = esc_html(fmt_salary30(job_salary_value($job)));
             $secondPerson = (bool)arr_get($job, 'secondPerson', false);
             $dl           = arr_get($job,'client.requirement.drivingLicense',null) ? 'Tak' : 'Nie';
 
@@ -305,7 +325,7 @@ function pflegejobs_modernes_listing() {
               echo "<div class='job-card-section'>
                       <div><i class='fas fa-calendar-alt'></i> <strong>Okres: </strong>&nbsp;{$start} – {$end}</div>
                       <div><i class='fas fa-language'></i> <strong>Język:</strong>&nbsp;{$lang_level}</div>
-                      <div><i class='fas fa-euro-sign'></i> <strong>Wynagrodzenie:</strong>&nbsp;{$salary}</div>
+                      <div><i class='fas fa-euro-sign'></i> <strong>Wynagrodzenie:</strong>&nbsp;do negocjacji</div>
                     </div>";
               echo "<div class='badge-row'>
                       ".($secondPerson ? "<span class='pill'><i class='fa-solid fa-user-group'></i> 2 osoby</span>" : "<span class='pill'><i class='fa-solid fa-user'></i> 1 osoba</span>")."
@@ -364,7 +384,7 @@ function pflegejobs_modernes_listing() {
 }
 
 /* =========================================================
-   Shortcode: Szczegóły oferty (mapa zbliżona + 2 osoby + rozszerzone info)
+   Shortcode: Szczegóły oferty (mapa zbliżona + 2 osoby)
    ========================================================= */
 
 add_shortcode('pflegejob_detail', 'pokaz_szczegoly_oferty');
@@ -390,7 +410,8 @@ function pokaz_szczegoly_oferty() {
     $lon         = (float)arr_get($job, 'client.longitude', 10.451526);
     $start       = fmt_date_pl(arr_get($job, 'startDate', ''));
     $end         = fmt_date_pl(arr_get($job, 'endDate', ''));
-    $salary30    = fmt_salary30(arr_get($job, 'offeredSalary', null));
+    $salary30    = fmt_salary30(job_salary_value($job));
+    $salary30    = fmt_salary30(job_salary_value($job));
     $pflegegrad  = esc_html(arr_get($job, 'client.pflegegrad', '-'));
 
     // Osoba 1 – profil
@@ -411,7 +432,17 @@ function pokaz_szczegoly_oferty() {
     $petType     = esc_html(arr_get($job, 'client.requirement.petType.name', '—'));
     $petsCare    = yesno_pl(arr_get($job, 'client.requirement.petsCare', null));
     $helpDevices = arr_get($job, 'client.requirement.helpDevices', []);
-    $helpDevicesStr = esc_html(join_nonempty(is_array($helpDevices) ? $helpDevices : [], ', '));
+    $helpDeviceNames = [];
+    if (is_array($helpDevices)) {
+        foreach ($helpDevices as $dev) {
+            if (is_array($dev) && isset($dev['name'])) {
+                $helpDeviceNames[] = trim((string)$dev['name']);
+            } elseif (is_string($dev)) {
+                $helpDeviceNames[] = trim($dev);
+            }
+        }
+    }
+    $helpDevicesStr = esc_html(join_nonempty($helpDeviceNames, ', '));
 
     // Opis/uwagi tekstowe – osoba 1
     $desc        = esc_html(arr_get($job, 'client.house.houseDescription', ''));
@@ -449,18 +480,38 @@ function pokaz_szczegoly_oferty() {
     $internet    = esc_html(arr_get($job, 'client.house.houseInternetConnectionType.name', '—'));
     $ownBath     = yesno_pl(arr_get($job, 'client.house.ownBathroomForCaregiver', null));
     $ownApt      = yesno_pl(arr_get($job, 'client.house.ownApartmentForCaregiver', null));
-    $sqm         = arr_get($job, 'client.house.squareMetres', null);
+    $sqm         = arr_get($job, 'client.house.squareMetres', default: null);
     $sqmStr      = $sqm !== null ? esc_html((string)$sqm).' m²' : '-';
     $smokerHH    = yesno_pl(arr_get($job, 'client.house.smokerHousehold', null));
     $petsDesc    = esc_html(arr_get($job, 'client.house.petsDescription', ''));
     $housePets   = arr_get($job, 'client.house.housePets', []);
-    $housePetsStr= esc_html(join_nonempty(is_array($housePets) ? $housePets : [], ', '));
+    $housePetNames = [];
+    if (is_array($housePets)) {
+        foreach ($housePets as $pet) {
+            if (is_array($pet) && isset($pet['name'])) {
+                $housePetNames[] = trim((string)$pet['name']);
+            } elseif (is_string($pet)) {
+                $housePetNames[] = trim($pet);
+            }
+        }
+    }
+    $housePetsStr= esc_html(join_nonempty($housePetNames, ', '));
     $shoppingFac = esc_html(arr_get($job, 'client.house.shoppingFacility', ''));
     $toClean     = esc_html(arr_get($job, 'client.house.toClean', ''));
     $carModel    = esc_html(arr_get($job, 'client.house.carModel', ''));
     $gearbox     = esc_html(arr_get($job, 'client.house.gearbox', ''));
     $mobOptions  = arr_get($job, 'client.house.mobilityOptions', []);
-    $mobOptionsStr = esc_html(join_nonempty(is_array($mobOptions) ? $mobOptions : [], ', '));
+    $mobOptionNames = [];
+    if (is_array($mobOptions)) {
+        foreach ($mobOptions as $mo) {
+            if (is_array($mo) && isset($mo['name'])) {
+                $mobOptionNames[] = trim((string)$mo['name']);
+            } elseif (is_string($mo)) {
+                $mobOptionNames[] = trim($mo);
+            }
+        }
+    }
+    $mobOptionsStr = esc_html(join_nonempty($mobOptionNames, ', '));
     $surrounding = esc_html(arr_get($job, 'client.house.surroundingArea', ''));
 
     // Druga osoba
@@ -476,180 +527,255 @@ function pokaz_szczegoly_oferty() {
     [$iframeSrc, $mapLink] = osm_iframe_from_latlon($lat, $lon, 14);
 
     ob_start();
-    echo '<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">';
-    echo '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>';
-
     ?>
-    <div class="pflegejob-detail-container">
-        <svg class="bcg" preserveAspectRatio="xMidYMid slice" viewBox="10 10 80 80">
-            <defs>
-                <style>
-                    @keyframes rotate { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
-                    .out-top { animation: rotate 20s linear infinite; transform-origin: 13px 25px; }
-                    .in-top { animation: rotate 10s linear infinite; transform-origin: 13px 25px; }
-                    .out-bottom { animation: rotate 25s linear infinite; transform-origin: 84px 93px; }
-                    .in-bottom { animation: rotate 15s linear infinite; transform-origin: 84px 93px; }
-                </style>
-            </defs>
-            <path fill="#f780600f" class="out-top" d="M37-5C25.1-14.7,5.7-19.1-9.2-10-28.5,1.8-32.7,31.1-19.8,49c15.5,21.5,52.6,22,67.2,2.3C59.4,35,53.7,8.5,37-5Z"/>
-            <path fill="#f780600f" class="in-top" d="M20.6,4.1C11.6,1.5-1.9,2.5-8,11.2-16.3,23.1-8.2,45.6,7.4,50S42.1,38.9,41,24.5C40.2,14.1,29.4,6.6,20.6,4.1Z"/>
-            <path fill="#f780600f" class="out-bottom" d="M105.9,48.6c-12.4-8.2-29.3-4.8-39.4,0.8-23.4,12.8-37.7,51.9-19.1,74.1s63.9,15.3,76-5.6c7.6-13.3,1.8-31.1-2.3-43.8C117.6,63.3,114.7,54.3,105.9,48.6Z"/>
-            <path fill="#f780600f" class="in-bottom" d="M102,67.1c-9.6-6.1-22-3.1-29.5,2-15.4,10.7-19.6,37.5-7.6,47.8s35.9,3.9,44.5-12.5C115.5,92.6,113.9,74.6,102,67.1Z"/>
-        </svg>
-
-        <h1 class="pflegejob-title">Zlecenie opieki w <?= $city ?><?= $zip ? ' ('.$zip.')' : '' ?></h1>
-
-        <div class="pflegejob-info-bar">
-            <p><span class="pflegejob-label">Okres:</span> <?= esc_html($start) ?> – <?= esc_html($end) ?></p>
-            <p><span class="pflegejob-label">Wynagrodzenie:</span> do negocjacji</p>
-            <p><span class="pflegejob-label">Miejscowość:</span> <?= $city ?><?= $state ? ' / '.esc_html($state) : '' ?></p>
-            <p><span class="pflegejob-label">Poziom opieki:</span> <?= $pflegegrad ?></p>
-            <p><span class="pflegejob-label">Język:</span> <?= $lang_name ?><?= $lang_level ? ' – '.$lang_level : '' ?></p>
-            <p><span class="pflegejob-label">Prawo jazdy:</span> <?= esc_html($license) ?></p>
-        </div>
-
-        <div class="pflegejob-grid-2x2">
-
-            <!-- OSOBA 1 -->
-            <div class="pflegejob-description-box">
-                <h2><i class="fas fa-user"></i> Podopieczny/a — Osoba 1 <?= $firstName1 ? ' ('.$firstName1.')' : '' ?></h2>
-                <div class="info-row">
-                    <p><strong>Płeć:</strong> <?= $gender1 ?></p>
-                    <p><strong>Wiek:</strong> <?= $age1 ?></p>
-                    <p><strong>Wzrost:</strong> <?= $height1 ?></p>
-                    <p><strong>Waga:</strong> <?= $weight1 ?></p>
-                    <p><strong>Pflegegrad:</strong> <?= $pflegegrad ?></p>
-                    <?php if ($residents !== ''): ?>
-                        <p><strong>Liczba mieszkańców w domu:</strong> <?= $residents ?></p>
-                    <?php endif; ?>
-                    <?php if ($petType !== '—'): ?>
-                        <p><strong>Zwierzęta w domu:</strong> <?= $petType ?> (opieka: <?= $petsCare ?>)</p>
-                    <?php endif; ?>
-                    <?php if ($nightSorties !== '' && $nightSorties !== '0'): ?>
-                        <p><strong>Nocne wyjścia:</strong> <?= $nightSorties ?>/mies.</p>
-                    <?php endif; ?>
-                </div>
-
-                <?php if (!empty($conditions)): ?>
-                    <div class="sublist">
-                        <strong>Stan zdrowia / opieka:</strong>
-                        <ul>
-                        <?php foreach ($conditions as $c): ?>
-                            <li><?= esc_html($c) ?></li>
-                        <?php endforeach; ?>
-                        </ul>
-                    </div>
-                <?php endif; ?>
-
-                <?php if ($helpDevicesStr !== ''): ?>
-                    <p><strong>Urządzenia pomocnicze:</strong> <?= $helpDevicesStr ?></p>
-                <?php endif; ?>
-
-                <?php if ($add_req !== ''): ?>
-                    <p><strong>Dodatkowe informacje:</strong> <?= $add_req ?></p>
-                <?php endif; ?>
-            </div>
-
-            <!-- MAPA -->
-            <div class="pflegejob-map">
-                <h2><i class="fas fa-map-marked-alt"></i> Lokalizacja</h2>
-                <iframe src="<?= esc_url($iframeSrc) ?>"></iframe>
-                <br/>
-                <small><a href="<?= esc_url($mapLink) ?>" target="_blank" rel="noopener">Zobacz większą mapę</a></small>
-            </div>
-
-            <!-- ZAKWATEROWANIE ROZSZERZONE -->
-            <div class="pflegejob-description-box">
-                <h2><i class="fas fa-house-user"></i> Zakwaterowanie</h2>
-                <?php if ($desc !== ''): ?><p><?= $desc ?></p><?php endif; ?>
-                <div class="info-grid">
-                    <p><strong>Typ domu:</strong> <?= $houseType ?></p>
-                    <p><strong>Internet:</strong> <?= $internet ?></p>
-                    <p><strong>Łazienka dla opiekunki:</strong> <?= $ownBath ?></p>
-                    <p><strong>Oddzielne mieszkanie:</strong> <?= $ownApt ?></p>
-                    <p><strong>Powierzchnia pokoju/mieszkania:</strong> <?= $sqmStr ?></p>
-                    <p><strong>Dom palących:</strong> <?= $smokerHH ?></p>
-                    <?php if ($housePetsStr !== ''): ?>
-                        <p><strong>Zwierzęta domowe:</strong> <?= $housePetsStr ?><?= $petsDesc ? ' ('.$petsDesc.')' : '' ?></p>
-                    <?php endif; ?>
-                    <?php if ($shoppingFac !== ''): ?>
-                        <p><strong>Sklepy w pobliżu:</strong> <?= $shoppingFac ?></p>
-                    <?php endif; ?>
-                    <?php if ($toClean !== ''): ?>
-                        <p><strong>Powierzchnia do sprzątania:</strong> <?= $toClean ?></p>
-                    <?php endif; ?>
-                    <?php if ($mobOptionsStr !== ''): ?>
-                        <p><strong>Komunikacja / dojazd:</strong> <?= $mobOptionsStr ?></p>
-                    <?php endif; ?>
-                    <?php if ($carModel !== '' || $gearbox !== ''): ?>
-                        <p><strong>Auto do dyspozycji:</strong> <?= trim(join_nonempty([$carModel, $gearbox], ' / ')) ?></p>
-                    <?php endif; ?>
-                    <?php if ($surrounding !== ''): ?>
-                        <p><strong>Okolica:</strong> <?= $surrounding ?></p>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- OCZEKIWANIA SZEROKIE -->
-            <div class="pflegejob-description-box">
-                <h2><i class="fas fa-user-check"></i> Oczekiwania</h2>
-                <div class="info-grid">
-                    <p><strong>Prawo jazdy:</strong> <?= esc_html($license) ?></p>
-                    <p><strong>Niepaląca opiekunka:</strong> <?= esc_html($nonSmokerReq) ?></p>
-                    <p><strong>Język:</strong> <?= $lang_name ?><?= $lang_level ? ' – '.$lang_level : '' ?></p>
-                    <?php if ($petsCare !== '-'): ?>
-                        <p><strong>Opieka nad zwierzętami:</strong> <?= $petsCare ?></p>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-
-        <?php if ($secondPerson): ?>
-            <div class="pflegejob-description-box" style="margin-top:16px;">
-                <h2><i class="fas fa-user-friends"></i> Podopieczny/a — Osoba 2</h2>
-                <div class="info-row">
-                    <p><strong>Płeć:</strong> <?= $gender2 ?></p>
-                    <p><strong>Wiek:</strong> <?= $age2 ?></p>
-                    <p><strong>Wzrost:</strong> <?= $height2 ?></p>
-                    <p><strong>Waga:</strong> <?= $weight2 ?></p>
-                    <p><strong>Pflegegrad:</strong> <?= $pflege2 ?></p>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <div class="pflegejob-btn-wrapper">
-            <a href="/formularz-aplikacyjny?jobid=<?= esc_attr($jobId) ?>" class="pflegejob-btn">Aplikuj teraz</a>
-        </div>
-    </div>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
     <style>
-        body { margin:0; font-family: 'Quicksand', sans-serif; background:#f6f7f8; color:#333; }
-        .pflegejob-detail-container { position:relative; background:#fff; overflow:hidden; padding:28px; max-width:1000px; margin:40px auto; border-radius:16px; box-shadow:0 6px 18px rgba(0,0,0,.05); }
-        .pflegejob-detail-container svg.bcg { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
-        .pflegejob-detail-container > *:not(svg) { position:relative; z-index:1; }
-        .pflegejob-title { font-size:32px; color:#f78060; text-align:center; margin-bottom:30px; }
-        .pflegejob-info-bar { display:flex; flex-wrap:wrap; justify-content:space-between; gap:16px; padding:16px 24px; background:rgba(255,245,242,.8); border:1px solid #fdded6; border-radius:12px; margin-bottom:32px; font-size:16px; }
-        .pflegejob-info-bar p { margin:0; flex:1 1 30%; line-height:1.6; }
-        .pflegejob-label { color:#f78060; font-weight:600; }
-        .pflegejob-grid-2x2 { display:grid; grid-template-columns: 1fr 1fr; gap:32px; margin-bottom:30px; }
-        .pflegejob-description-box, .pflegejob-map { background:transparent; border:1px solid #fdded6; border-radius:16px; padding:24px; box-shadow:0 2px 4px rgba(0,0,0,.03); }
-        .pflegejob-description-box h2, .pflegejob-map h2 { color:#f78060; font-size:22px; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-        .info-row { display:flex; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
-        .sublist ul { margin:8px 0 0 18px; }
-        .info-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px 24px; }
-        .pflegejob-map iframe { width:100%; height:300px; border:none; border-radius:12px; }
-        .pflegejob-btn-wrapper { text-align:center; margin-top:30px; }
-        .pflegejob-btn { background:#f78060; padding:14px 28px; color:#fff; border-radius:30px; text-decoration:none; font-weight:bold; box-shadow:0 4px 14px rgba(0,0,0,.08); transition: background .3s ease; }
-        .pflegejob-btn:hover { background:#e76948; }
-        @media (max-width: 768px) {
-            .pflegejob-grid-2x2 { grid-template-columns:1fr; }
-            .pflegejob-info-bar { flex-direction:column; }
-            .info-grid { grid-template-columns: 1fr; }
-        }
+      :root{
+        --primary:#f78060; --text:#313131; --text-muted:#5b5b5b;
+        --border:#eee1de; --radius:18px;
+        --shadow:0 8px 24px rgba(0,0,0,.08);
+      }
+      html,body{ scroll-behavior:smooth; }
+      .pflegejob-wrap{ max-width:1100px; margin:40px auto; padding:24px; position:relative; }
+      .pflegejob-card{ background:#fff; border:1px solid var(--border); border-radius:28px; box-shadow:var(--shadow); overflow:hidden; position:relative; }
+      .pflegejob-ribbon{ position:absolute; top:18px; right:-46px; background:var(--primary); color:#fff; padding:10px 64px; transform:rotate(25deg); font-weight:800; text-transform:uppercase; letter-spacing:.02em; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+
+      /* Platz rechts für fixe CTA (Desktop) */
+      @media (min-width:1100px){ .pflegejob-page-pad{ padding-right:360px; } }
+
+      /* Unveränderte Hero-Section (aus deinem Layout) */
+      .header{ padding:28px 28px 6px; }
+      .job-id{ display:inline-flex; gap:.5rem; background:#ffe9e2; color:#a44328; padding:6px 12px; border-radius:999px; font-weight:800; }
+      .title{ margin:14px 0 4px; font-size:clamp(22px,2.2vw + 12px,36px); font-weight:900; letter-spacing:.2px; }
+      .subtitle{ margin:0 28px 18px; color:var(--text-muted); font-size:clamp(16px,1.2vw + 8px,20px); }
+
+      .left{ padding:0 28px 28px; }
+      .facts{ display:grid; grid-template-columns:1fr; gap:14px; }
+      @media (min-width:640px){ .facts{ grid-template-columns:1fr 1fr; } }
+      .fact{ display:flex; gap:12px; align-items:flex-start; padding:14px; border:1px dashed var(--border); border-radius:14px; background:#fff; }
+      .icon{ width:40px;height:40px; border-radius:12px; background:#fff3ef; display:grid; place-items:center; flex:0 0 40px; border:1px solid #ffd7cc; color:var(--primary); }
+      .fact strong{ display:block; font-weight:800; }
+      .fact .value{ font-weight:700; }
+
+      .location{ margin-top:18px; background:#faf7f6; border:1px solid var(--border); border-radius:18px; padding:16px; }
+      .map-btn{ display:inline-flex; align-items:center; gap:.55rem; margin-top:10px; padding:10px 14px; border-radius:999px; border:1px solid var(--primary); color:var(--primary); background:#fff; font-weight:800; transition:.2s; cursor:pointer; }
+      .map-btn:hover{ background:var(--primary); color:#fff; box-shadow:0 6px 18px rgba(247,128,96,.35); transform:translateY(-1px); }
+
+      /* Lesbare Unter-Sektionen mit FontAwesome */
+      .section{ margin-top:22px; border:1px solid var(--border); border-radius:18px; padding:20px; background:#fff; }
+      .section h3{ margin:0 0 12px; color:var(--primary); font-size:20px; display:flex; align-items:center; gap:10px; }
+      .section h3 i{ color:var(--primary); }
+
+      /* Key/Value – mobil dürfen die Unterpunkte nebeneinander sein */
+      .kv{ display:grid; grid-template-columns:1fr 1fr; gap:10px 22px; align-items:start; }
+      .kv .label{ display:flex; align-items:flex-start; gap:10px; }
+      .kv .label i{ color:var(--primary); margin-top:2px; width:18px; text-align:center; }
+      .kv b{ font-weight:900; }
+      @media (max-width:420px){ .kv{ grid-template-columns:1fr; } } /* nur sehr klein einspaltig */
+
+      .bullets{ list-style:none; padding:0; margin:8px 0 0; }
+      .bullets li{ display:flex; gap:10px; align-items:flex-start; margin:.4rem 0; }
+      .bullets li i{ color:var(--primary); margin-top:2px; }
+
+      .map iframe{ width:100%; height:300px; border:0; border-radius:12px; }
+
+      .cta-fixed{
+        position:fixed; right:20px; top: 136px; width:320px; z-index:100;
+        background:#fff; border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow);
+        padding:20px; display:flex; flex-direction:column; gap:14px;
+      }
+      .cta-fixed .btn{ display:flex; justify-content:center; align-items:center; gap:.55rem; border-radius:999px; padding:14px 18px; font-weight:800; border:2px solid transparent; cursor:pointer; }
+      .cta-fixed .btn-outline{ background:#fff; color:var(--text); border-color:var(--border); }
+      .cta-fixed .btn-outline:hover{ border-color:var(--primary); color:var(--primary); }
+      .cta-fixed .btn-primary{ background:var(--primary); color:#fff; box-shadow:0 8px 22px rgba(247,128,96,.35); }
+      .cta-fixed .badge{ display:inline-flex; align-items:center; gap:.5rem; padding:8px 12px; border-radius:999px; background:#e8fff4; color:#127a4b; font-weight:800; border:1px solid #c9f2e2; width:max-content; }
+
+      @media (max-width:1099px){
+        .cta-fixed{ right:0; left:0; bottom:0; top:auto; width:auto; border-radius:16px 16px 0 0; flex-direction:row; flex-wrap:wrap; justify-content:center; }
+        .cta-fixed .badge{ display:none; }
+        .cta-fixed .btn{ flex:1; min-width:120px; }
+        .pflegejob-page-pad{ padding-right:0; }
+      }
+
+      /* Hintergrund-SVG */
+      .bcg{
+        position:fixed; top:0; left:0; width:100%; height:100%;
+        z-index:-1; opacity:.9; pointer-events:none;
+      }
     </style>
+
+    <!-- Hintergrund SVG -->
+    <svg class="bcg" preserveAspectRatio="xMidYMid slice" viewBox="10 10 80 80" aria-hidden="true">
+      <defs><style>
+        @keyframes rotate{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+        .out-top{animation:rotate 20s linear infinite;transform-origin:13px 25px}
+        .in-top{animation:rotate 10s linear infinite;transform-origin:13px 25px}
+        .out-bottom{animation:rotate 25s linear infinite;transform-origin:84px 93px}
+        .in-bottom{animation:rotate 15s linear infinite;transform-origin:84px 93px}
+      </style></defs>
+      <path fill="#f780600f" class="out-top" d="M37-5C25.1-14.7,5.7-19.1-9.2-10-28.5,1.8-32.7,31.1-19.8,49c15.5,21.5,52.6,22,67.2,2.3C59.4,35,53.7,8.5,37-5Z"/>
+      <path fill="#f780600f" class="in-top" d="M20.6,4.1C11.6,1.5-1.9,2.5-8,11.2-16.3,23.1-8.2,45.6,7.4,50S42.1,38.9,41,24.5C40.2,14.1,29.4,6.6,20.6,4.1Z"/>
+      <path fill="#f780600f" class="out-bottom" d="M105.9,48.6c-12.4-8.2-29.3-4.8-39.4,0.8-23.4,12.8-37.7,51.9-19.1,74.1s63.9,15.3,76-5.6c7.6-13.3,1.8-31.1-2.3-43.8C117.6,63.3,114.7,54.3,105.9,48.6Z"/>
+      <path fill="#f780600f" class="in-bottom" d="M102,67.1c-9.6-6.1-22-3.1-29.5,2-15.4,10.7-19.6,37.5-7.6,47.8s35.9,3.9,44.5-12.5C115.5,92.6,113.9,74.6,102,67.1Z"/>
+    </svg>
+
+    <div class="pflegejob-page-pad">
+      <div class="pflegejob-wrap">
+        <article class="pflegejob-card">
+
+          <!-- HERO (identisch wie bei dir) -->
+          <header class="header">
+            <h1 class="title"><?php
+              echo 'Zlecenie opieki w '. $city . ($zip ? ' ('.$zip.')' : '');
+            ?></h1>
+          </header>
+          <p class="subtitle" style="display:flex; justify-content:space-between; align-items:center;">
+            <?php
+              $where = trim(join_nonempty([$zip, $city, $state], ' '));
+              $salTxt = 'do negocjacji';
+            ?>
+            <span><?php echo esc_html($start).' – '.esc_html($end).' • '.esc_html($where); ?></span>
+            <span style="font-size:1.8rem; font-weight:bold; color:#2c3e50;">
+              <?php echo 'Stawka: '.esc_html($salTxt); ?>
+            </span>
+          </p>
+
+          <section class="left">
+            <!-- Fakty -->
+            <div class="facts">
+              <div class="fact"><div class="icon"><i class="fa-solid fa-city"></i></div><div><strong>Miejscowość</strong><div class="value"><?php echo $city.($state?' / '.$state:''); ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-regular fa-calendar"></i></div><div><strong>Okres</strong><div class="value"><?php echo esc_html($start).' – '.esc_html($end); ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-solid fa-coins"></i></div><div><strong>Wynagrodzenie</strong><div class="value"><?php echo $salary30; ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-regular fa-clock"></i></div><div><strong>Pflegegrad</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-solid fa-language"></i></div><div><strong>Język</strong><div class="value"><?php echo $lang_name.($lang_level?' – '.$lang_level:''); ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-solid fa-id-card"></i></div><div><strong>Prawo jazdy</strong><div class="value"><?php echo esc_html($license); ?></div></div></div>
+            </div>
+
+            <div class="location">
+              <div><strong>Niemcy</strong> · <?php echo esc_html($state?:''); ?> · <?php echo esc_html(trim(join_nonempty([$zip,$city],' '))); ?></div>
+              <a href="#map-section" class="map-btn"><i class="fa-solid fa-location-dot"></i> Sprawdź na mapie</a>
+            </div>
+
+            <!-- OSOBA 1 -->
+            <div class="section">
+              <h3><i class="fa-solid fa-user"></i> Podopieczny/a — Osoba 1 <?php echo $firstName1 ? ' ('.$firstName1.')' : ''; ?></h3>
+              <div class="kv" aria-label="Profil osoby 1">
+                <div class="label"><i class="fa-solid fa-venus-mars"></i><b>Płeć</b></div><div><?php echo $gender1; ?></div>
+                <div class="label"><i class="fa-solid fa-hourglass-half"></i><b>Wiek</b></div><div><?php echo $age1; ?></div>
+                <div class="label"><i class="fa-solid fa-ruler-vertical"></i><b>Wzrost</b></div><div><?php echo $height1; ?></div>
+                <div class="label"><i class="fa-solid fa-weight-scale"></i><b>Waga</b></div><div><?php echo $weight1; ?></div>
+                <div class="label"><i class="fa-regular fa-circle-check"></i><b>Pflegegrad</b></div><div><?php echo $pflegegrad; ?></div>
+                <?php if ($residents !== ''): ?>
+                  <div class="label"><i class="fa-solid fa-people-roof"></i><b>Mieszkańcy w domu</b></div><div><?php echo $residents; ?></div>
+                <?php endif; ?>
+                <?php if ($petType !== '—'): ?>
+                  <div class="label"><i class="fa-solid fa-paw"></i><b>Zwierzęta</b></div><div><?php echo $petType.' (opieka: '.$petsCare.')'; ?></div>
+                <?php endif; ?>
+                <?php if ($nightSorties !== '' && $nightSorties !== '0'): ?>
+                  <div class="label"><i class="fa-regular fa-moon"></i><b>Nocne wyjścia</b></div><div><?php echo $nightSorties; ?>/mies.</div>
+                <?php endif; ?>
+              </div>
+
+              <?php if (!empty($conditions)): ?>
+                <ul class="bullets" aria-label="Stan zdrowia i opieka">
+                  <?php foreach ($conditions as $c): ?>
+                    <li><i class="fa-solid fa-circle-check"></i> <?php echo esc_html($c); ?></li>
+                  <?php endforeach; ?>
+                </ul>
+              <?php endif; ?>
+
+              <?php if ($helpDevicesStr !== ''): ?>
+                <div class="kv" style="margin-top:10px">
+                  <div class="label"><i class="fa-solid fa-crutch"></i><b>Urządzenia pomocnicze</b></div><div><?php echo $helpDevicesStr; ?></div>
+                </div>
+              <?php endif; ?>
+
+              <?php if ($add_req !== ''): ?>
+                <div class="kv" style="margin-top:6px">
+                  <div class="label"><i class="fa-regular fa-note-sticky"></i><b>Dodatkowe informacje</b></div><div><?php echo $add_req; ?></div>
+                </div>
+              <?php endif; ?>
+            </div>
+
+            <!-- ZAKWATEROWANIE -->
+            <div class="section">
+              <h3><i class="fa-solid fa-house"></i> Zakwaterowanie</h3>
+              <?php if ($desc !== ''): ?><p><?php echo $desc; ?></p><?php endif; ?>
+
+              <div class="kv" aria-label="Szczegóły zakwaterowania">
+                <div class="label"><i class="fa-solid fa-house-chimney"></i><b>Typ domu</b></div><div><?php echo $houseType; ?></div>
+                <div class="label"><i class="fa-solid fa-wifi"></i><b>Internet</b></div><div><?php echo $internet; ?></div>
+                <div class="label"><i class="fa-solid fa-shower"></i><b>Łazienka dla opiekunki</b></div><div><?php echo $ownBath; ?></div>
+                <div class="label"><i class="fa-regular fa-square"></i><b>Oddzielny pokoj</b></div><div><?php echo $ownApt; ?></div>
+                <div class="label"><i class="fa-regular fa-square-full"></i><b>Powierzchnia pokoju</b></div><div><?php echo $sqmStr; ?></div>
+                <div class="label"><i class="fa-solid fa-ban-smoking"></i><b>Dom palących</b></div><div><?php echo $smokerHH; ?></div>
+
+                <?php if ($housePetsStr !== ''): ?>
+                  <div class="label"><i class="fa-solid fa-paw"></i><b>Zwierzęta domowe</b></div><div><?php echo $housePetsStr . ($petsDesc ? ' ('.$petsDesc.')' : ''); ?></div>
+                <?php endif; ?>
+
+                <?php if ($shoppingFac !== ''): ?>
+                  <div class="label"><i class="fa-solid fa-store"></i><b>Sklepy w pobliżu</b></div><div><?php echo $shoppingFac; ?></div>
+                <?php endif; ?>
+
+                <?php if ($toClean !== ''): ?>
+                  <div class="label"><i class="fa-solid fa-broom"></i><b>Pow. do sprzątania</b></div><div><?php echo $toClean; ?></div>
+                <?php endif; ?>
+
+                <?php if ($mobOptionsStr !== ''): ?>
+                  <div class="label"><i class="fa-solid fa-bus"></i><b>Srodek transportu</b></div><div><?php echo $mobOptionsStr; ?></div>
+                <?php endif; ?>
+
+                <?php if ($carModel !== '' || $gearbox !== ''): ?>
+                  <div class="label"><i class="fa-solid fa-car-side"></i><b>Auto do dyspozycji</b></div><div><?php echo trim(join_nonempty([$carModel, $gearbox], ' / ')); ?></div>
+                <?php endif; ?>
+
+                <?php if ($surrounding !== ''): ?>
+                  <div class="label"><i class="fa-regular fa-compass"></i><b>Okolica</b></div><div><?php echo $surrounding; ?></div>
+                <?php endif; ?>
+              </div>
+            </div>
+
+            <!-- 2. OSOBA -->
+            <?php if ($secondPerson): ?>
+              <div class="section">
+                <h3><i class="fa-solid fa-user-group"></i> Podopieczny/a — Osoba 2</h3>
+                <div class="kv">
+                  <div class="label"><i class="fa-solid fa-venus-mars"></i><b>Płeć</b></div><div><?php echo $gender2; ?></div>
+                  <div class="label"><i class="fa-solid fa-hourglass-half"></i><b>Wiek</b></div><div><?php echo $age2; ?></div>
+                  <div class="label"><i class="fa-solid fa-ruler-vertical"></i><b>Wzrost</b></div><div><?php echo $height2; ?></div>
+                  <div class="label"><i class="fa-solid fa-weight-scale"></i><b>Waga</b></div><div><?php echo $weight2; ?></div>
+                  <div class="label"><i class="fa-regular fa-circle-check"></i><b>Pflegegrad</b></div><div><?php echo $pflege2; ?></div>
+                </div>
+              </div>
+            <?php endif; ?>
+
+            <!-- MAPA -->
+            <div class="section map" id="map-section">
+              <h3><i class="fa-solid fa-location-dot"></i> Lokalizacja</h3>
+              <iframe src="<?php echo esc_url($iframeSrc); ?>" loading="lazy"></iframe>
+              <p style="margin-top:8px;">
+                <a href="<?php echo esc_url($mapLink); ?>" target="_blank" rel="noopener">Zobacz większą mapę</a>
+              </p>
+            </div>
+          </section>
+        </article>
+      </div>
+    </div>
+
+    <!-- FIXED CTA (rechts / mobil unten) -->
+    <aside class="cta-fixed" aria-label="Akcje">
+      <a class="btn btn-outline" href="tel:+48800010150" role="button"><i class="fa-solid fa-phone"></i> ZADZWOŃ</a>
+      <a class="btn btn-primary" href="<?php echo esc_url( add_query_arg(['jobid'=>$jobId], '/formularz-aplikacyjny') ); ?>" role="button"><i class="fa-solid fa-square-check"></i> APLIKUJ</a>
+      <div class="badge"><i class="fa-solid fa-briefcase"></i> <?php echo esc_html__('popularne miejsce pracy',''); ?></div>
+    </aside>
+
     <?php
     return ob_get_clean();
 }
+
 
 /* =========================================================
    Shortcode: Formularz aplikacyjny (wysyłka maila)
@@ -684,7 +810,7 @@ function pflege_bewerbung_form() {
             if ($agree !== 1)               $errors[] = 'Musisz zaakceptować Politykę prywatności.';
 
             if (empty($errors)) {
-                // Pobierz miasto/okres dla maila (opcjonalne)
+                // (Opcjonalnie) pobierz miasto/okres dla maila
                 $jobCity=''; $period='';
                 $jobs = maidplus_fetch_open_positions();
                 if (!is_wp_error($jobs)) {
@@ -712,6 +838,7 @@ function pflege_bewerbung_form() {
 
                 if (wp_mail($to, $subject, $body, $headers)) {
                     $ok_msg = 'Dziękujemy! Zgłoszenie zostało wysłane.';
+                    // czyść wartości
                     $values = ['imie'=>'','nazwisko'=>'','telefon'=>''];
                 } else {
                     $errors[] = 'Nie udało się wysłać wiadomości. Spróbuj ponownie.';
@@ -722,6 +849,7 @@ function pflege_bewerbung_form() {
 
     ob_start();
     echo '<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">';
+    echo '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>';
     echo '<style>
     .apply-wrap{display:flex;justify-content:center;padding:40px 16px}
     .apply-card{max-width:640px;width:100%;background:rgba(255,245,242,.7);backdrop-filter:blur(8px);border:1px solid #fdded6;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.08);padding:28px}
