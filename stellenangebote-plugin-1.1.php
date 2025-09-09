@@ -89,13 +89,10 @@ function lang_code_normalize($s) {
     return null;
 }
 
-/** Pobiera wartość wynagrodzenia (wpTariff lub offeredSalary) jako float. */
+/** Pobiera wartość wynagrodzenia (tylko offeredSalary – stawka miesięczna) jako float. */
 function job_salary_value($job) {
-    $val = arr_get($job, 'wpTariff', null);
-    if ($val === null || $val === '') {
-        $val = arr_get($job, 'offeredSalary', null);
-    }
-    return floatval($val);
+    $val = arr_get($job, 'offeredSalary', null);
+    return $val !== null && $val !== '' ? floatval($val) : 0.0;
 }
 
 /** Prosta walidacja URL bez rozszerzenia filter (fallback). */
@@ -665,7 +662,7 @@ function pokaz_szczegoly_oferty() {
           <p class="subtitle" style="display:flex; justify-content:space-between; align-items:center;">
             <?php
               $where = trim(join_nonempty([$zip, $city, $state], ' '));
-              $salTxt = 'do negocjacji';
+              $salTxt = $salary30 && $salary30 !== '-' ? $salary30 : '—';
             ?>
             <span><?php echo esc_html($start).' – '.esc_html($end).' • '.esc_html($where); ?></span>
             <span style="font-size:1.8rem; font-weight:bold; color:#2c3e50;">
