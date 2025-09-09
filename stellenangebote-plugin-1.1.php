@@ -388,20 +388,20 @@ function pflegejobs_modernes_listing() {
     echo '<style>
     body{margin:0;font-family:"Quicksand",sans-serif;background:#f6f7f8;color:#333}
     svg.bcg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
-    .job-listing-container{position:relative;z-index:1;max-width:960px;margin:60px auto 40px;padding:20px 16px}
+    .job-listing-container{position:relative;z-index:1;max-width:960px;margin:40px auto 24px;padding:12px}
     .job-listing-title{text-align:center;font-size:32px;color:#f78060;margin-bottom:24px}
-    .job-filters{background:rgba(255,245,242,.35);backdrop-filter:blur(6px);border:1px solid #fdded6;border-radius:16px;padding:16px;margin-bottom:16px}
-    .filters-row{display:flex;flex-wrap:wrap;gap:12px}
-    .filter-item{display:flex;flex-direction:column;min-width:140px;flex:1 1 180px}
+    .job-filters{background:rgba(255,245,242,.35);backdrop-filter:blur(6px);border:1px solid #fdded6;border-radius:12px;padding:12px;margin-bottom:12px}
+    .filters-row{display:flex;flex-wrap:wrap;gap:10px}
+    .filter-item{display:flex;flex-direction:column;min-width:140px;flex:1 1 160px}
     .filter-item.checkbox{justify-content:flex-end;flex:0 0 auto;min-width:auto}
     .filter-item label{font-size:12px;color:#f78060;margin-bottom:6px;display:flex;gap:6px;align-items:center}
-    .filter-item input[type=text],.filter-item input[type=number],.filter-item input[type=date],.filter-item select{padding:10px 12px;border:1px solid #fdded6;border-radius:12px;background:#fff;font-size:14px}
+    .filter-item input[type=text],.filter-item input[type=number],.filter-item input[type=date],.filter-item select{padding:8px 10px;border:1px solid #fdded6;border-radius:10px;background:#fff;font-size:14px}
     .filter-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-end}
-    .btn-primary{background:#f78060;color:#fff;border:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600}
-    .btn-secondary{display:inline-block;padding:10px 14px;border-radius:12px;border:1px solid #fdded6;color:#f78060;text-decoration:none;background:#fff}
+    .btn-primary{background:#f78060;color:#fff;border:none;border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:14px}
+    .btn-secondary{display:inline-block;padding:9px 12px;border-radius:10px;border:1px solid #fdded6;color:#f78060;text-decoration:none;background:#fff;font-size:14px}
     .result-info{margin:10px 4px 18px;color:#7b6d68;font-size:14px}
-    .job-cards{display:flex;flex-direction:column;gap:24px}
-    .job-card{display:flex;justify-content:space-between;flex-wrap:wrap;gap:24px;background:rgba(255,245,242,.35);backdrop-filter:blur(6px);padding:24px;border-radius:16px;border:1px solid #fdded6;box-shadow:0 6px 20px rgba(0,0,0,.04);transition:.3s ease;cursor:pointer}
+    .job-cards{display:flex;flex-direction:column;gap:12px}
+    .job-card{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;background:rgba(255,245,242,.35);backdrop-filter:blur(4px);padding:14px;border-radius:12px;border:1px solid #fdded6;box-shadow:0 4px 12px rgba(0,0,0,.04);transition:.2s ease;cursor:pointer}
     .job-card:hover{background:rgba(255,245,242,.5);box-shadow:0 10px 30px rgba(0,0,0,.08);transform:translateY(-4px)}
     .job-card-section{display:flex;flex-direction:column;gap:10px;flex:1 1 45%}
     .job-card-section i{margin-right:6px;color:#f78060;width:18px}
@@ -414,10 +414,17 @@ function pflegejobs_modernes_listing() {
     .pagination a.active,.pagination a:hover{background:rgba(255,245,242,.8)}
     @media(max-width:768px){
       .job-card{flex-direction:column}
-      .filters-row{gap:10px}
+      .filters-row{gap:8px}
       .filter-item{flex:1 1 100%;min-width:100%}
       .filter-actions{width:100%;margin-top:8px;justify-content:stretch}
       .filter-actions .btn-primary, .filter-actions .btn-secondary{flex:1}
+    }
+    @media(max-width:480px){
+      .job-listing-title{font-size:22px}
+      .btn-primary,.btn-secondary{padding:7px 9px;font-size:12px;border-radius:8px}
+      .job-card{padding:12px;border-radius:10px}
+      .job-card-section div{font-size:13px}
+      .pill{padding:4px 7px;font-size:10px}
     }
     </style>';
 
@@ -511,12 +518,21 @@ function pokaz_szczegoly_oferty() {
     }
     // Translacja urządzeń pomocniczych (DE/EN -> PL)
     $trHelpDevice = [
-        'Anti-Dekubitus-Matratze' => 'Materac przeciwodleżynowy',
+        // EN values
         'Anti-decubitus mattress' => 'Materac przeciwodleżynowy',
+        'Care Bed' => 'Łóżko pielęgnacyjne',
+        'Lifter Bath' => 'Podnośnik kąpielowy',
+        'Bath Lifter' => 'Podnośnik kąpielowy',
+        'Lifter Bed' => 'Podnośnik do łóżka',
+        'Rollator' => 'Rollator',
+        'Stair Lifter' => 'Winda schodowa',
+        'Walking Stick' => 'Laska',
+        'Wheelchair' => 'Wózek inwalidzki',
+        // DE fallbacks (in case API returns DE)
+        'Anti-Dekubitus-Matratze' => 'Materac przeciwodleżynowy',
         'Pflegebett' => 'Łóżko pielęgnacyjne',
         'Badlifter' => 'Podnośnik kąpielowy',
         'Bett Lift' => 'Podnośnik do łóżka',
-        'Rollator' => 'Rollator',
         'Treppen Lift' => 'Winda schodowa',
         'Gehstock' => 'Laska',
         'Rollstuhl' => 'Wózek inwalidzki',
