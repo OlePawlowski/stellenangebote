@@ -419,6 +419,13 @@ function pflegejobs_modernes_listing() {
       .filter-actions{width:100%;margin-top:8px;justify-content:stretch}
       .filter-actions .btn-primary, .filter-actions .btn-secondary{flex:1}
     }
+    @media(max-width:480px){
+      .job-listing-title{font-size:24px}
+      .btn-primary,.btn-secondary{padding:8px 10px;font-size:13px;border-radius:8px}
+      .job-card{padding:14px;border-radius:12px}
+      .job-card-section div{font-size:14px}
+      .pill{padding:5px 8px;font-size:11px}
+    }
     </style>';
 
     return ob_get_clean();
@@ -661,7 +668,7 @@ function pokaz_szczegoly_oferty() {
         background:#fff; border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow);
         padding:20px; display:flex; flex-direction:column; gap:14px;
       }
-      .cta-fixed .btn{ display:flex; justify-content:center; align-items:center; gap:.55rem; border-radius:999px; padding:14px 18px; font-weight:800; border:2px solid transparent; cursor:pointer; }
+      .cta-fixed .btn{ display:flex; justify-content:center; align-items:center; gap:.55rem; border-radius:999px; padding:12px 16px; font-weight:800; border:2px solid transparent; cursor:pointer; font-size:14px; }
       .cta-fixed .btn-outline{ background:#fff; color:var(--text); border-color:var(--border); }
       .cta-fixed .btn-outline:hover{ border-color:var(--primary); color:var(--primary); }
       .cta-fixed .btn-primary{ background:var(--primary); color:#fff; box-shadow:0 8px 22px rgba(247,128,96,.35); }
@@ -670,7 +677,7 @@ function pokaz_szczegoly_oferty() {
       @media (max-width:1099px){
         .cta-fixed{ right:0; left:0; bottom:0; top:auto; width:auto; border-radius:16px 16px 0 0; flex-direction:row; flex-wrap:wrap; justify-content:center; }
         .cta-fixed .badge{ display:none; }
-        .cta-fixed .btn{ flex:1; min-width:120px; }
+        .cta-fixed .btn{ flex:1; min-width:120px; padding:12px 14px; }
         .pflegejob-page-pad{ padding-right:0; }
       }
 
