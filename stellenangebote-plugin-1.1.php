@@ -304,7 +304,7 @@ function pflegejobs_modernes_listing() {
         foreach ($paged_items as $job) {
             $id           = esc_attr(arr_get($job, 'jobOfferId', ''));
             $city         = esc_html(arr_get($job, 'client.city', '—'));
-            $gender_disp  = esc_html(pl_gender_label(gender: arr_get($job,'client.gender','')));
+            $gender_disp  = esc_html(pl_gender_label(arr_get($job,'client.gender','')));
             $pflegegrad   = esc_html(arr_get($job, 'client.pflegegrad', '-'));
             $lang_level   = esc_html(arr_get($job, 'client.requirement.languageSkill.languageLevel', '-'));
             $start        = fmt_date_pl(arr_get($job, 'startDate', ''));
