@@ -170,6 +170,7 @@ function pflegejobs_modernes_listing() {
                 (string)arr_get($job,'client.city','').' '.
                 (string)arr_get($job,'client.zipCode','').' '.
                 (string)arr_get($job,'jobOfferId','')
+                
             );
             if (strpos($hay, strtolower($q)) === false) return false;
         }
@@ -306,12 +307,23 @@ function pflegejobs_modernes_listing() {
             $city         = esc_html(arr_get($job, 'client.city', '—'));
             $gender_disp  = esc_html(pl_gender_label(arr_get($job,'client.gender','')));
             $pflegegrad   = esc_html(arr_get($job, 'client.pflegegrad', '-'));
-            $lang_level   = esc_html(arr_get($job, 'client.requirement.languageSkill.languageLevel', '-'));
             $start        = fmt_date_pl(arr_get($job, 'startDate', ''));
             $end          = fmt_date_pl(arr_get($job, 'endDate', ''));
             $salary       = esc_html(fmt_salary30(job_salary_value($job)));
             $secondPerson = (bool)arr_get($job, 'secondPerson', false);
             $dl           = arr_get($job,'client.requirement.drivingLicense',null) ? 'Tak' : 'Nie';
+            $lang_level  = (string)arr_get($job, 'client.requirement.languageSkill.languageLevel', '-');
+            $lang_name   = (string)arr_get($job, 'client.requirement.languageSkill.language', 'German');
+            // Translacje stałych wartości -> PL
+            $trLang = [
+              'German' => 'Niemiecki', 'English' => 'Angielski'
+            ];
+            $trLangLevel = [
+              'A0 (keine)' => 'A0 (brak)', 'A1 (Grund)' => 'A1 (podstawy)', 'A2 (mittel)' => 'A2 (średni)',
+              'B1 (gut)' => 'B1 (dobry)', 'B2 (sehr gut)' => 'B2 (bardzo dobry)', 'C1 (perfekt)' => 'C1 (perfekcyjny)', 'C2' => 'C2'
+            ];
+            $lang_name = esc_html($trLang[$lang_name] ?? $lang_name);
+            $lang_level = esc_html($trLangLevel[$lang_level] ?? $lang_level);
 
             echo "<div class='job-card' onclick=\"window.location.href='/oferta?jobid={$id}'\">";
               echo "<div class='job-card-section'>
@@ -655,8 +667,8 @@ function pokaz_szczegoly_oferty() {
 
           <!-- HERO (identisch wie bei dir) -->
           <header class="header">
-            <h1 class="title"><?php
-              echo 'Zlecenie opieki w '. $city . ($zip ? ' ('.$zip.')' : '');
+            <h1 class="title" style="color: #f78060"><?php
+              echo 'Zlecenie opieki w '. $city;
             ?></h1>
           </header>
           <p class="subtitle" style="display:flex; justify-content:space-between; align-items:center;">
@@ -676,10 +688,9 @@ function pokaz_szczegoly_oferty() {
               <div class="fact"><div class="icon"><i class="fa-solid fa-city"></i></div><div><strong>Miejscowość</strong><div class="value"><?php echo $city.($state?' / '.$state:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-regular fa-calendar"></i></div><div><strong>Okres</strong><div class="value"><?php echo esc_html($start).' – '.esc_html($end); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-coins"></i></div><div><strong>Wynagrodzenie</strong><div class="value"><?php echo $salary30; ?></div></div></div>
-              <div class="fact"><div class="icon"><i class="fa-regular fa-clock"></i></div><div><strong>Stopień opieki</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-regular fa-user-check"></i></div><div><strong>Stopień opieki</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-language"></i></div><div><strong>Język</strong><div class="value"><?php echo $lang_name.($lang_level?' – '.$lang_level:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-id-card"></i></div><div><strong>Prawo jazdy</strong><div class="value"><?php echo esc_html($license); ?></div></div></div>
-              <div class="fact"><div class="icon"><i class="fa-solid fa-user-check"></i></div><div><strong>Oferta dla</strong><div class="value"><?php echo esc_html($caregiverGender); ?></div></div></div>
             </div>
 
             <div class="location">
@@ -738,8 +749,7 @@ function pokaz_szczegoly_oferty() {
                 <div class="label"><i class="fa-solid fa-house-chimney"></i><b>Typ domu</b></div><div><?php echo $houseType; ?></div>
                 <div class="label"><i class="fa-solid fa-wifi"></i><b>Internet</b></div><div><?php echo $internet; ?></div>
                 <div class="label"><i class="fa-solid fa-shower"></i><b>Łazienka dla opiekunki</b></div><div><?php echo $ownBath; ?></div>
-                <div class="label"><i class="fa-regular fa-square"></i><b>Oddzielny pokoj</b></div><div><?php echo $ownApt; ?></div>
-                <div class="label"><i class="fa-regular fa-square-full"></i><b>Powierzchnia pokoju</b></div><div><?php echo $sqmStr; ?></div>
+                <div class="label"><i class="fa-solid fa-person-shelter"></i><b>Oddzielny pokoj</b></div><div><?php echo $ownApt; ?></div>
                 <div class="label"><i class="fa-solid fa-ban-smoking"></i><b>Dom palących</b></div><div><?php echo $smokerHH; ?></div>
 
                 <?php if ($housePetsStr !== ''): ?>
