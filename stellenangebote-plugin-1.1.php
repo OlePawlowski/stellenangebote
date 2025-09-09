@@ -101,20 +101,46 @@ function looks_like_url($s) {
     return (bool) preg_match('/^https?:\/\//i', $s);
 }
 
-/** Pobiera otwarte oferty. */
-function maidplus_fetch_open_positions() {
+/** Pobiera otwarte oferty dla wskazanego użytkownika (pojedyncza organizacja). */
+function maidplus_fetch_open_positions_single($username, $password) {
     $url = 'https://integration.maidplus.de/working-position/open';
     $response = wp_remote_get($url, [
         'headers' => [
-            'Authorization' => 'Basic ' . base64_encode('helpcarepl:hallo'),
+            'Authorization' => 'Basic ' . base64_encode($username . ':' . $password),
         ],
         'timeout' => 20,
     ]);
     if (is_wp_error($response)) return $response;
     $body = wp_remote_retrieve_body($response);
     $data = json_decode($body, true);
-    if (!is_array($data)) $data = [];
-    return $data;
+    return is_array($data) ? $data : [];
+}
+
+/** Pobiera i scala otwarte oferty z PL oraz DE organizacji. */
+function maidplus_fetch_open_positions_all() {
+    // PL organizacja (istniejące uprawnienia)
+    $pl = maidplus_fetch_open_positions_single('helpcarepl', 'hallo');
+    // DE organizacja (zgodnie z prośbą użytkownika)
+    $de = maidplus_fetch_open_positions_single('helpcare', 'nrJTyyouKzbdiwA');
+
+    // Jeżeli któryś zwrócił błąd, ignoruj błąd i korzystaj z drugiego
+    $pl_list = is_wp_error($pl) ? [] : $pl;
+    $de_list = is_wp_error($de) ? [] : $de;
+
+    // Scal listy i usuń duplikaty po jobOfferId
+    $byId = [];
+    foreach ([$pl_list, $de_list] as $list) {
+        foreach ($list as $job) {
+            $id = (string)arr_get($job, 'jobOfferId', '');
+            if ($id !== '') {
+                $byId[$id] = $job; // ostatni wygrywa
+            } else {
+                // brak ID – dodaj jako unikalny wpis
+                $byId[spl_object_hash((object)$job)] = $job;
+            }
+        }
+    }
+    return array_values($byId);
 }
 
 /** OSM iframe/link – domyślnie mocniej zbliżony (miasto). */
@@ -136,7 +162,7 @@ function osm_iframe_from_latlon($lat, $lon, $zoom = 14) {
 add_shortcode('pflege_stellenangebote', 'pflegejobs_modernes_listing');
 
 function pflegejobs_modernes_listing() {
-    $jobs = maidplus_fetch_open_positions();
+    $jobs = maidplus_fetch_open_positions_all();
     if (is_wp_error($jobs)) return '<p>Błąd podczas ładowania ofert pracy.</p>';
     if (empty($jobs)) return '<p>Brak ofert pracy.</p>';
 
@@ -408,7 +434,7 @@ function pokaz_szczegoly_oferty() {
     if (!isset($_GET['jobid'])) return '<p>Brak oferty pracy.</p>';
 
     $jobId = sanitize_text_field($_GET['jobid']);
-    $jobs  = maidplus_fetch_open_positions();
+    $jobs  = maidplus_fetch_open_positions_all();
     if (is_wp_error($jobs)) return '<p>Błąd podczas ładowania oferty.</p>';
 
     $job = null;
