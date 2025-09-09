@@ -425,6 +425,13 @@ function pokaz_szczegoly_oferty() {
 
     // Wymagania/stan zdrowia – osoba 1
     $license     = yesno_pl(arr_get($job, 'client.requirement.drivingLicense', null));
+    $caregiverGenderRaw = (string)arr_get($job,'client.requirement.caregiverGender','');
+    $trCaregiverGender = [
+        'No preference' => 'bez preferencji',
+        'Female' => 'opiekunki',
+        'Male' => 'opiekuna'
+    ];
+    $caregiverGender = $trCaregiverGender[$caregiverGenderRaw] ?? ($caregiverGenderRaw !== '' ? strtolower($caregiverGenderRaw) : 'bez preferencji');
     $nonSmokerReq= yesno_pl(arr_get($job, 'client.requirement.nonSmoker', null));
     $lang_level  = (string)arr_get($job, 'client.requirement.languageSkill.languageLevel', '-');
     $lang_name   = (string)arr_get($job, 'client.requirement.languageSkill.language', 'German');
@@ -675,6 +682,7 @@ function pokaz_szczegoly_oferty() {
               <div class="fact"><div class="icon"><i class="fa-regular fa-clock"></i></div><div><strong>Pflegegrad</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-language"></i></div><div><strong>Język</strong><div class="value"><?php echo $lang_name.($lang_level?' – '.$lang_level:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-id-card"></i></div><div><strong>Prawo jazdy</strong><div class="value"><?php echo esc_html($license); ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-solid fa-user-check"></i></div><div><strong>Oferta dla</strong><div class="value"><?php echo esc_html($caregiverGender); ?></div></div></div>
             </div>
 
             <div class="location">
