@@ -624,21 +624,22 @@ function pokaz_szczegoly_oferty() {
     <div class="pflegejob-page-pad">
       <div class="pflegejob-wrap">
         <article class="pflegejob-card">
-          <div class="pflegejob-ribbon"><?php echo esc_html__('Polecana',''); ?></div>
 
           <!-- HERO (identisch wie bei dir) -->
           <header class="header">
-            <span class="job-id"><?php echo 'Nr '.esc_html($jobId); ?></span>
             <h1 class="title"><?php
               echo 'Zlecenie opieki w '. $city . ($zip ? ' ('.$zip.')' : '');
             ?></h1>
           </header>
-          <p class="subtitle">
+          <p class="subtitle" style="display:flex; justify-content:space-between; align-items:center;">
             <?php
               $where = trim(join_nonempty([$zip, $city, $state], ' '));
               $salTxt = 'do negocjacji';
-              echo esc_html($start).' – '.esc_html($end).' • '.esc_html($where).' • Stawka: '.esc_html($salTxt);
             ?>
+            <span><?php echo esc_html($start).' – '.esc_html($end).' • '.esc_html($where); ?></span>
+            <span style="font-size:1.8rem; font-weight:bold; color:#2c3e50;">
+              <?php echo 'Stawka: '.esc_html($salTxt); ?>
+            </span>
           </p>
 
           <section class="left">
@@ -646,7 +647,7 @@ function pokaz_szczegoly_oferty() {
             <div class="facts">
               <div class="fact"><div class="icon"><i class="fa-solid fa-city"></i></div><div><strong>Miejscowość</strong><div class="value"><?php echo $city.($state?' / '.$state:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-regular fa-calendar"></i></div><div><strong>Okres</strong><div class="value"><?php echo esc_html($start).' – '.esc_html($end); ?></div></div></div>
-              <div class="fact"><div class="icon"><i class="fa-solid fa-coins"></i></div><div><strong>Wynagrodzenie</strong><div class="value">do negocjacji</div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-solid fa-coins"></i></div><div><strong>Wynagrodzenie</strong><div class="value"><?php echo $salary30; ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-regular fa-clock"></i></div><div><strong>Pflegegrad</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-language"></i></div><div><strong>Język</strong><div class="value"><?php echo $lang_name.($lang_level?' – '.$lang_level:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-id-card"></i></div><div><strong>Prawo jazdy</strong><div class="value"><?php echo esc_html($license); ?></div></div></div>
@@ -724,7 +725,7 @@ function pokaz_szczegoly_oferty() {
                 <?php endif; ?>
 
                 <?php if ($mobOptionsStr !== ''): ?>
-                  <div class="label"><i class="fa-solid fa-bus"></i><b>Komunikacja / dojazd</b></div><div><?php echo $mobOptionsStr; ?></div>
+                  <div class="label"><i class="fa-solid fa-bus"></i><b>Srodek transportu</b></div><div><?php echo $mobOptionsStr; ?></div>
                 <?php endif; ?>
 
                 <?php if ($carModel !== '' || $gearbox !== ''): ?>
