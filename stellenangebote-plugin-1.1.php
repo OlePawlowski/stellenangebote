@@ -419,13 +419,6 @@ function pflegejobs_modernes_listing() {
       .filter-actions{width:100%;margin-top:8px;justify-content:stretch}
       .filter-actions .btn-primary, .filter-actions .btn-secondary{flex:1}
     }
-    @media(max-width:480px){
-      .job-listing-title{font-size:24px}
-      .btn-primary,.btn-secondary{padding:8px 10px;font-size:13px;border-radius:8px}
-      .job-card{padding:14px;border-radius:12px}
-      .job-card-section div{font-size:14px}
-      .pill{padding:5px 8px;font-size:11px}
-    }
     </style>';
 
     return ob_get_clean();
@@ -654,7 +647,7 @@ function pokaz_szczegoly_oferty() {
       .kv .label{ display:flex; align-items:flex-start; gap:10px; }
       .kv .label i{ color:var(--primary); margin-top:2px; width:18px; text-align:center; }
       .kv b{ font-weight:900; }
-      @media (max-width:420px){ .kv{ grid-template-columns:1fr; } } /* nur sehr klein einspaltig */
+      @media (max-width:420px){ .kv{ } } /* nur sehr klein einspaltig */
 
       .bullets{ list-style:none; padding:0; margin:8px 0 0; }
       .bullets li{ display:flex; gap:10px; align-items:flex-start; margin:.4rem 0; }
@@ -668,7 +661,7 @@ function pokaz_szczegoly_oferty() {
         background:#fff; border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow);
         padding:20px; display:flex; flex-direction:column; gap:14px;
       }
-      .cta-fixed .btn{ display:flex; justify-content:center; align-items:center; gap:.55rem; border-radius:999px; padding:12px 16px; font-weight:800; border:2px solid transparent; cursor:pointer; font-size:14px; }
+      .cta-fixed .btn{ display:flex; justify-content:center; align-items:center; gap:.55rem; border-radius:999px; padding:14px 18px; font-weight:800; border:2px solid transparent; cursor:pointer; }
       .cta-fixed .btn-outline{ background:#fff; color:var(--text); border-color:var(--border); }
       .cta-fixed .btn-outline:hover{ border-color:var(--primary); color:var(--primary); }
       .cta-fixed .btn-primary{ background:var(--primary); color:#fff; box-shadow:0 8px 22px rgba(247,128,96,.35); }
@@ -677,7 +670,7 @@ function pokaz_szczegoly_oferty() {
       @media (max-width:1099px){
         .cta-fixed{ right:0; left:0; bottom:0; top:auto; width:auto; border-radius:16px 16px 0 0; flex-direction:row; flex-wrap:wrap; justify-content:center; }
         .cta-fixed .badge{ display:none; }
-        .cta-fixed .btn{ flex:1; min-width:120px; padding:12px 14px; }
+        .cta-fixed .btn{ flex:1; min-width:120px; }
         .pflegejob-page-pad{ padding-right:0; }
       }
 
@@ -750,7 +743,7 @@ function pokaz_szczegoly_oferty() {
                 <div class="label"><i class="fa-solid fa-weight-scale"></i><b>Waga</b></div><div><?php echo $weight1; ?></div>
                 <div class="label"><i class="fa-regular fa-circle-check"></i><b>Stopień opieki</b></div><div><?php echo $pflegegrad; ?></div>
                 <?php if ($residents !== ''): ?>
-                  <div class="label"><i class="fa-solid fa-people-roof"></i><b>Mieszkańcy w domu</b></div><div><?php echo $residents; ?></div>
+                  <div class="label"><i class="fa-solid fa-people-roof"></i><b>Mieszkańcy</b></div><div><?php echo $residents; ?></div>
                 <?php endif; ?>
                 <?php if ($petType !== '—'): ?>
                   <div class="label"><i class="fa-solid fa-paw"></i><b>Zwierzęta</b></div><div><?php echo $petType.' (opieka: '.$petsCare.')'; ?></div>
@@ -807,7 +800,7 @@ function pokaz_szczegoly_oferty() {
               <div class="kv" aria-label="Szczegóły zakwaterowania">
                 <div class="label"><i class="fa-solid fa-house-chimney"></i><b>Typ domu</b></div><div><?php echo $houseType; ?></div>
                 <div class="label"><i class="fa-solid fa-wifi"></i><b>Internet</b></div><div><?php echo $internet; ?></div>
-                <div class="label"><i class="fa-solid fa-shower"></i><b>Łazienka dla opiekunki</b></div><div><?php echo $ownBath; ?></div>
+                <div class="label"><i class="fa-solid fa-shower"></i><b>Własna łazienka</b></div><div><?php echo $ownBath; ?></div>
                 <div class="label"><i class="fa-solid fa-person-shelter"></i><b>Oddzielny pokoj</b></div><div><?php echo $ownApt; ?></div>
                 <div class="label"><i class="fa-solid fa-ban-smoking"></i><b>Dom palących</b></div><div><?php echo $smokerHH; ?></div>
 
