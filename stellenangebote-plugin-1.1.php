@@ -509,6 +509,21 @@ function pokaz_szczegoly_oferty() {
             }
         }
     }
+    // Translacja urządzeń pomocniczych (DE/EN -> PL)
+    $trHelpDevice = [
+        'Anti-Dekubitus-Matratze' => 'Materac przeciwodleżynowy',
+        'Anti-decubitus mattress' => 'Materac przeciwodleżynowy',
+        'Pflegebett' => 'Łóżko pielęgnacyjne',
+        'Badlifter' => 'Podnośnik kąpielowy',
+        'Bett Lift' => 'Podnośnik do łóżka',
+        'Rollator' => 'Rollator',
+        'Treppen Lift' => 'Winda schodowa',
+        'Gehstock' => 'Laska',
+        'Rollstuhl' => 'Wózek inwalidzki',
+    ];
+    $helpDeviceNames = array_map(function($name) use ($trHelpDevice) {
+        return $trHelpDevice[$name] ?? $name;
+    }, $helpDeviceNames);
     $helpDevicesStr = esc_html(join_nonempty($helpDeviceNames, ', '));
 
     // Opis/uwagi tekstowe – osoba 1
@@ -567,8 +582,17 @@ function pokaz_szczegoly_oferty() {
         }
     }
     $housePetsStr= esc_html(join_nonempty($housePetNames, ', '));
-    $shoppingFac = esc_html(arr_get($job, 'client.house.shoppingFacility', ''));
-    $toClean     = esc_html(arr_get($job, 'client.house.toClean', ''));
+    // Sklepy w pobliżu – może przyjść jako tablica
+    $shoppingRaw = arr_get($job, 'client.house.shoppingFacility', '');
+    if (is_array($shoppingRaw)) {
+        $shoppingFac = esc_html(join_nonempty(array_map(function($v){
+            if (is_array($v) && isset($v['name'])) return trim((string)$v['name']);
+            return is_string($v) ? trim($v) : '';
+        }, $shoppingRaw), ', '));
+    } else {
+        $shoppingFac = esc_html((string)$shoppingRaw);
+    }
+    $toClean     = esc_html((string)arr_get($job, 'client.house.toClean', ''));
     $carModel    = esc_html(arr_get($job, 'client.house.carModel', ''));
     $gearbox     = esc_html(arr_get($job, 'client.house.gearbox', ''));
     $mobOptions  = arr_get($job, 'client.house.mobilityOptions', []);
@@ -584,7 +608,16 @@ function pokaz_szczegoly_oferty() {
     }
     $trMob = ['Access to public transport'=>'Dostęp do komunikacji miejskiej','Bike'=>'Rower','Car'=>'Samochód','E-Bike'=>'E‑rower'];
     $mobOptionsStr = esc_html(join_nonempty(array_map(function($v) use ($trMob){return $trMob[$v] ?? $v;}, $mobOptionNames), ', '));
-    $surrounding = esc_html(arr_get($job, 'client.house.surroundingArea', ''));
+    // Okolica – zabezpieczenie przed wyświetleniem "Array"
+    $surroundingRaw = arr_get($job, 'client.house.surroundingArea', '');
+    if (is_array($surroundingRaw)) {
+        $surrounding = esc_html(join_nonempty(array_map(function($v){
+            if (is_array($v) && isset($v['name'])) return trim((string)$v['name']);
+            return is_string($v) ? trim($v) : '';
+        }, $surroundingRaw), ', '));
+    } else {
+        $surrounding = esc_html((string)$surroundingRaw);
+    }
 
     // Druga osoba
     $secondPerson = (bool)arr_get($job, 'secondPerson', false);
