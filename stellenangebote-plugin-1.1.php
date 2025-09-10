@@ -264,7 +264,7 @@ function pflegejobs_modernes_listing() {
       <path fill="#f780600f" class="in-bottom" d="M102,67.1c-9.6-6.1-22-3.1-29.5,2-15.4,10.7-19.6,37.5-7.6,47.8s35.9,3.9,44.5-12.5C115.5,92.6,113.9,74.6,102,67.1Z"/></svg>';
 
     echo '<div class="job-listing-container">';
-    echo '<h2 class="job-listing-title">Aktualne oferty pracy w opiece</h2>';
+    echo '<h2 class="job-listing-title" style="color: #5b5b5b;">Aktualne oferty pracy w opiece</h2>';
 
     // Filtry (nowy design)
     echo '<form class="job-filters" method="get">';
@@ -704,7 +704,7 @@ function pokaz_szczegoly_oferty() {
       .bullets li i{ color:var(--primary); margin-top:2px; }
 
       .map iframe{ width:100%; height:300px; border:0; border-radius:12px; }
-      @media (max-width:420px){ .map iframe{ height:240px; } }
+      @media (max-width:420px){ .map iframe{ height:240px; } #price-tag {font-size: 1.5rem !important;} .title{font-size: 1.65rem !important;} }
 
       .cta-fixed{
         position:fixed; right:20px; top: 136px; width:320px; z-index:100;
@@ -762,7 +762,7 @@ function pokaz_szczegoly_oferty() {
               $salTxt = $salary30 && $salary30 !== '-' ? $salary30 : '—';
             ?>
             <span><?php echo esc_html($start).' – '.esc_html($end).' • '.esc_html($where); ?></span>
-            <span style="font-size:1.8rem; font-weight:bold; color:#2c3e50;">
+            <span id="price-tag" style="font-size:1.8rem; font-weight:bold; color:#2c3e50;">
               <?php echo 'Stawka: '.esc_html($salTxt); ?>
             </span>
           </p>
@@ -773,7 +773,7 @@ function pokaz_szczegoly_oferty() {
               <div class="fact"><div class="icon"><i class="fa-solid fa-city"></i></div><div><strong>Miejscowość</strong><div class="value"><?php echo $city.($state?' / '.$state:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-regular fa-calendar"></i></div><div><strong>Okres</strong><div class="value"><?php echo esc_html($start).' – '.esc_html($end); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-coins"></i></div><div><strong>Wynagrodzenie</strong><div class="value"><?php echo $salary30; ?></div></div></div>
-              <div class="fact"><div class="icon"><i class="fa-regular fa-user-check"></i></div><div><strong>Stopień opieki</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
+              <div class="fact"><div class="icon"><i class="fa-solid fa-user-check"></i></div><div><strong>Stopień opieki</strong><div class="value"><?php echo $pflegegrad; ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-language"></i></div><div><strong>Język</strong><div class="value"><?php echo $lang_name.($lang_level?' – '.$lang_level:''); ?></div></div></div>
               <div class="fact"><div class="icon"><i class="fa-solid fa-id-card"></i></div><div><strong>Prawo jazdy</strong><div class="value"><?php echo esc_html($license); ?></div></div></div>
             </div>
@@ -785,7 +785,7 @@ function pokaz_szczegoly_oferty() {
 
             <!-- OSOBA 1 -->
             <div class="section">
-              <h3><i class="fa-solid fa-user"></i> Podopieczny/a — Osoba 1 <?php echo $firstName1 ? ' ('.$firstName1.')' : ''; ?></h3>
+              <h3><i class="fa-solid fa-user"></i> Podopieczny/a <?php echo $firstName1 ? ' ('.$firstName1.')' : ''; ?></h3>
               <div class="kv" aria-label="Profil osoby 1">
                 <div class="label"><i class="fa-solid fa-venus-mars"></i><b>Płeć</b></div><div><?php echo $gender1; ?></div>
                 <div class="label"><i class="fa-solid fa-hourglass-half"></i><b>Wiek</b></div><div><?php echo $age1; ?></div>
