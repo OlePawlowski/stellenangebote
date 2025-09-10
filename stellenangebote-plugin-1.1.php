@@ -293,13 +293,34 @@ function pflegejobs_modernes_listing() {
         echo '</select></div>';
       echo '</div>';
 
-      echo '<div class="filters-row">';
-        echo '<div class="filter-item"><label for="from"><i class="fa-solid fa-calendar-day"></i> Od</label><input type="date" id="from" name="from" value="'.esc_attr($from).'"></div>';
-        echo '<div class="filter-item"><label for="to"><i class="fa-solid fa-calendar-check"></i> Do</label><input type="date" id="to" name="to" value="'.esc_attr($to).'"></div>';
-        echo '<div class="filter-item"><label for="min_salary"><i class="fa-solid fa-euro-sign"></i> Min. wynagrodzenie (€/msc)</label><input type="number" step="0.01" min="0" id="min_salary" name="min_salary" value="'.esc_attr($min_salary ?? '').'" placeholder="np. 2200"></div>';
-        echo '<div class="filter-item checkbox"><label class="chk"><input type="checkbox" name="two" value="1" '.checked($two_person,1,false).'> 2 osoby</label></div>';
-        echo '<div class="filter-item checkbox"><label class="chk"><input type="checkbox" name="license" value="1" '.checked($license_req,1,false).'> Prawo jazdy</label></div>';
-      echo '</div>';
+     echo '<div class="filters-row">';
+
+echo '<div class="filter-item">
+        <label for="from"><i class="fa-solid fa-calendar-day"></i> Od</label>
+        <input type="date" id="from" name="from" value="'.esc_attr($from).'">
+      </div>';
+
+echo '<div class="filter-item">
+        <label for="to"><i class="fa-solid fa-calendar-check"></i> Do</label>
+        <input type="date" id="to" name="to" value="'.esc_attr($to).'">
+      </div>';
+
+echo '<div class="filter-item">
+        <label for="min_salary"><i class="fa-solid fa-euro-sign"></i> Min. wynagrodzenie (€/msc)</label>
+        <input type="number" step="0.01" min="0" id="min_salary" name="min_salary"
+               value="'.esc_attr($min_salary ?? '').'" placeholder="np. 2200">
+      </div>';
+
+echo '<div class="filter-item">
+        <label>&nbsp;</label>
+        <div class="checkbox-group" style="display: flex; justify-content: space-around;">
+          <label class="chk"><input type="checkbox" name="two" value="1" '.checked($two_person,1,false).'> 2 osoby</label>
+          <label class="chk"><input type="checkbox" name="license" value="1" '.checked($license_req,1,false).'> Prawo jazdy</label>
+        </div>
+      </div>';
+
+echo '</div>';
+
 
       echo '<div class="filters-row">';
         echo '<div class="filter-item"><label for="sort"><i class="fa-solid fa-arrow-down-short-wide"></i> Sortowanie</label>
@@ -401,7 +422,7 @@ function pflegejobs_modernes_listing() {
     .filter-item input[type=text],.filter-item input[type=number],.filter-item input[type=date],.filter-item select{padding:8px 10px;border:1px solid #fdded6;border-radius:10px;background:#fff;font-size:14px}
     .filter-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-end}
     .btn-primary{background:#f78060;color:#fff;border:none;border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:14px}
-    .btn-secondary{display:inline-block;padding:9px 12px;border-radius:10px;border:1px solid #fdded6;color:#f78060;text-decoration:none;background:#fff;font-size:14px}
+    .btn-secondary{display:inline-block;padding:5.5px 12px;border-radius:10px;border:1px solid #fdded6;color:#f78060;text-decoration:none;background:#fff;font-size:14px;}
     .result-info{margin:10px 4px 18px;color:#7b6d68;font-size:14px}
     .job-cards{display:flex;flex-direction:column;gap:12px}
     .job-card{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;background:rgba(255,245,242,.35);backdrop-filter:blur(4px);padding:14px;border-radius:12px;border:1px solid #fdded6;box-shadow:0 4px 12px rgba(0,0,0,.04);transition:.2s ease;cursor:pointer}
@@ -429,7 +450,7 @@ function pflegejobs_modernes_listing() {
       .job-listing-title{font-size:22px}
       .btn-primary,.btn-secondary{padding:7px 9px;font-size:12px;border-radius:8px}
       .job-card{padding:12px;border-radius:10px}
-      .job-card-section div{font-size:13px}
+      .job-card-section div{font-size:18px}
       .pill{padding:4px 7px;font-size:10px}
     }
     </style>';
