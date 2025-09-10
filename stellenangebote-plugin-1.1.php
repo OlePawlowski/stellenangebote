@@ -415,6 +415,8 @@ function pflegejobs_modernes_listing() {
     @media(max-width:768px){
       .job-card{flex-direction:column}
       .filters-row{gap:8px}
+      /* mobile: show only key filters in first row */
+      .filter-item:nth-child(n+5){ display:none; }
       .filter-item{flex:1 1 100%;min-width:100%}
       .filter-actions{width:100%;margin-top:8px;justify-content:stretch}
       .filter-actions .btn-primary, .filter-actions .btn-secondary{flex:1}
@@ -624,16 +626,18 @@ function pokaz_szczegoly_oferty() {
     }
     $trMob = ['Access to public transport'=>'Dostęp do komunikacji miejskiej','Bike'=>'Rower','Car'=>'Samochód','E-Bike'=>'E‑rower'];
     $mobOptionsStr = esc_html(join_nonempty(array_map(function($v) use ($trMob){return $trMob[$v] ?? $v;}, $mobOptionNames), ', '));
-    // Okolica – zabezpieczenie przed wyświetleniem "Array"
+    // Okolica – zabezpieczenie przed wyświetleniem "Array" + translacja Rural/Urban
     $surroundingRaw = arr_get($job, 'client.house.surroundingArea', '');
     if (is_array($surroundingRaw)) {
-        $surrounding = esc_html(join_nonempty(array_map(function($v){
+        $surroundingStr = join_nonempty(array_map(function($v){
             if (is_array($v) && isset($v['name'])) return trim((string)$v['name']);
             return is_string($v) ? trim($v) : '';
-        }, $surroundingRaw), ', '));
+        }, $surroundingRaw), ', ');
     } else {
-        $surrounding = esc_html((string)$surroundingRaw);
+        $surroundingStr = (string)$surroundingRaw;
     }
+    $trSurrounding = ['Rural' => 'Wiejski', 'Urban' => 'Miejski'];
+    $surrounding = esc_html($trSurrounding[$surroundingStr] ?? $surroundingStr);
 
     // Druga osoba
     $secondPerson = (bool)arr_get($job, 'secondPerson', false);
