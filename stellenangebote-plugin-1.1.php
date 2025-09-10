@@ -267,7 +267,9 @@ function pflegejobs_modernes_listing() {
     echo '<h2 class="job-listing-title" style="color: #5b5b5b;">Aktualne oferty pracy w opiece</h2>';
 
     // Filtry (nowy design)
-    echo '<form class="job-filters" method="get">';
+    $filters_open = ($q!=='' || $gender!=='' || $pg_filter!=='' || $lvl_filter!=='' || $from!=='' || $to!=='' || ($min_salary!==null && $min_salary>0) || $two_person===1 || $license_req===1 || $sort!=='date_desc' || $per_page!==12);
+    echo '<button class="filters-toggle" type="button" aria-expanded="'.($filters_open?'true':'false').'" aria-controls="filtersForm"><i class="fa-solid fa-sliders"></i> Filtry</button>';
+    echo '<form id="filtersForm" class="job-filters'.($filters_open?' open':'').'" method="get">';
       echo '<div class="filters-row">';
         echo '<div class="filter-item"><label for="q"><i class="fa-solid fa-magnifying-glass"></i> Miasto / Kod / ID</label>
               <input type="text" id="q" name="q" value="'.esc_attr($q).'" placeholder="np. Berlin, 10115, 1fcc..."></div>';
@@ -413,10 +415,11 @@ function pflegejobs_modernes_listing() {
     .pagination a{padding:8px 12px;border:1px solid #fdded6;border-radius:12px;text-decoration:none;color:#f78060;background:#fff}
     .pagination a.active,.pagination a:hover{background:rgba(255,245,242,.8)}
     @media(max-width:768px){
+      .filters-toggle{display:flex;align-items:center;gap:8px;background:#f78060;color:#fff;border:none;border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:600;margin:8px 0}
+      .job-filters{display:none}
+      .job-filters.open{display:block}
       .job-card{flex-direction:column}
       .filters-row{gap:8px}
-      /* mobile: show only key filters in first row */
-      .filter-item:nth-child(n+5){ display:none; }
       .filter-item{flex:1 1 100%;min-width:100%}
       .filter-actions{width:100%;margin-top:8px;justify-content:stretch}
       .filter-actions .btn-primary, .filter-actions .btn-secondary{flex:1}
