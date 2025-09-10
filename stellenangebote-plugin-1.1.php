@@ -321,6 +321,7 @@ function pflegejobs_modernes_listing() {
               <a class="btn-secondary" href="'.$base_url.'">Wyczyść</a></div>';
       echo '</div>';
     echo '</form>';
+    echo '<script>(function(){document.addEventListener("DOMContentLoaded",function(){document.querySelectorAll(".filters-toggle").forEach(function(btn){var form=btn.nextElementSibling; if(!form||!form.classList.contains("job-filters")) return; btn.addEventListener("click",function(){var isOpen=form.classList.toggle("open"); btn.setAttribute("aria-expanded", isOpen?"true":"false");});});});})();</script>';
 
     // Info
     echo '<div class="result-info">'. sprintf('<strong>%d</strong> wyników · strona %d z %d', (int)$total, (int)$page, (int)$pages) .'</div>';
