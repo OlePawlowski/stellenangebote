@@ -602,8 +602,17 @@ function pokaz_szczegoly_oferty() {
 
     // Dom / zakwaterowanie – rozszerzone
     $houseTypeRaw= (string)arr_get($job, 'client.house.houseType.name', '—');
-    $trHouse = ['Apartment with elevator'=>'Mieszkanie z windą','Apartment'=>'Mieszkanie','Apartment House'=>'Dom wielorodzinny','Detached House'=>'Dom jednorodzinny'];
-    $houseType   = esc_html($trHouse[$houseTypeRaw] ?? $houseTypeRaw);
+    $houseTypeKey = strtolower(trim($houseTypeRaw));
+    $trHouseLc = [
+        'apartment with elevator' => 'Mieszkanie z windą',
+        'apartment' => 'Mieszkanie',
+        'apartment house' => 'Dom wielorodzinny',
+        'detached house' => 'Dom jednorodzinny',
+        // warianty "appartement"
+        'appartement' => 'Mieszkanie',
+        'appartement house' => 'Dom wielorodzinny',
+    ];
+    $houseType   = esc_html($trHouseLc[$houseTypeKey] ?? $houseTypeRaw);
     $internetRaw = (string)arr_get($job, 'client.house.houseInternetConnectionType.name', '—');
     $trInternet = ['Kabel'=>'Kabel','Not Available'=>'Brak','Ordered'=>'Zamówiony','Surfstick'=>'Modem USB','Wifi'=>'Wi‑Fi'];
     $internet    = esc_html($trInternet[$internetRaw] ?? $internetRaw);
