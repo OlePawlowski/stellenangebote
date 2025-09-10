@@ -603,13 +603,21 @@ function pokaz_szczegoly_oferty() {
     // Sklepy w pobliżu – może przyjść jako tablica
     $shoppingRaw = arr_get($job, 'client.house.shoppingFacility', '');
     if (is_array($shoppingRaw)) {
-        $shoppingFac = esc_html(join_nonempty(array_map(function($v){
+        $shoppingStr = join_nonempty(array_map(function($v){
             if (is_array($v) && isset($v['name'])) return trim((string)$v['name']);
             return is_string($v) ? trim($v) : '';
-        }, $shoppingRaw), ', '));
+        }, $shoppingRaw), ', ');
     } else {
-        $shoppingFac = esc_html((string)$shoppingRaw);
+        $shoppingStr = (string)$shoppingRaw;
     }
+    $trShopping = [
+        'More than 60 min' => 'Powyżej 60 min',
+        'Up to 10 min' => 'Do 10 min',
+        'Up to 20 min' => 'Do 20 min',
+        'Up to 40 min' => 'Do 40 min',
+        'Up to 60 min' => 'Do 60 min',
+    ];
+    $shoppingFac = esc_html($trShopping[$shoppingStr] ?? $shoppingStr);
     $toClean     = esc_html((string)arr_get($job, 'client.house.toClean', ''));
     $carModel    = esc_html(arr_get($job, 'client.house.carModel', ''));
     $gearbox     = esc_html(arr_get($job, 'client.house.gearbox', ''));
